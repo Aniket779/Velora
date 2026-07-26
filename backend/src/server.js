@@ -8,6 +8,7 @@ require('dotenv').config();
 const { initializeSocket } = require('./socket');
 const connectDB = require('./config/db');
 const tripRoutes = require('./api/routes/trip.routes');
+const servicesRoutes = require('./api/routes/services.routes');
 const errorHandler = require('./api/middlewares/errorHandler');
 const QueueListenerService = require('./services/queueListener.service');
 
@@ -30,6 +31,7 @@ app.get('/health', (req, res) => {
 
 // Mount Routes
 app.use('/api/v1/trips', tripRoutes);
+app.use('/api/v1/services', servicesRoutes);
 
 // Unhandled Route Middleware
 app.all('*', (req, res, next) => {
@@ -50,6 +52,9 @@ initializeSocket(io);
 
 // Initialize Queue Listener to bridge BullMQ to Socket.io
 new QueueListenerService(io);
+
+// Start Background Workers
+require('./workers/aiGenerator.worker');
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {

@@ -1,4 +1,5 @@
 const tripService = require('../../services/trip.service');
+const aiService = require('../../services/ai.service');
 
 // Controller methods wrap the service calls and handle ONLY HTTP concerns
 const createTrip = async (req, res, next) => {
@@ -30,7 +31,25 @@ const getTrip = async (req, res, next) => {
   }
 };
 
+const generateTrip = async (req, res, next) => {
+  try {
+    const mockUserId = 'user_123'; // Matches our frontend socket auth for now
+    const tripId = 'temp_trip_' + Date.now();
+    
+    // Request generation (non-blocking)
+    const result = await aiService.requestItineraryGeneration(mockUserId, tripId, req.body);
+    
+    res.status(202).json({
+      status: 'success',
+      data: result
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   createTrip,
-  getTrip
+  getTrip,
+  generateTrip
 };

@@ -7,6 +7,15 @@ const tripSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    destination: {
+      type: String,
+      required: true,
+    },
+    budget: {
+      type: String,
+      enum: ['budget', 'moderate', 'luxury'],
+      default: 'moderate'
+    },
     owner_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
@@ -31,6 +40,15 @@ const tripSchema = new mongoose.Schema(
       enum: ['planning', 'booked', 'active', 'completed'],
       default: 'planning',
     },
+    // --- Versioning Pointers ---
+    originalAIVersion: { 
+      type: mongoose.Schema.Types.ObjectId, 
+      ref: 'Itinerary' 
+    },
+    currentVersion: { 
+      type: mongoose.Schema.Types.ObjectId, 
+      ref: 'Itinerary' 
+    }
   },
   { timestamps: true }
 );

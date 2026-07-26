@@ -7,6 +7,11 @@ const redisConnection = {
   port: process.env.REDIS_PORT || 6379,
 };
 
+if (process.env.REDIS_PASSWORD) {
+  redisConnection.password = process.env.REDIS_PASSWORD;
+  redisConnection.tls = {}; // Required for Upstash
+}
+
 // This worker listens to the 'ai-generation-queue'
 const aiWorker = new Worker(
   'ai-generation-queue',
@@ -20,11 +25,13 @@ const aiWorker = new Worker(
 
       // 2. Format the response and update the database via the Repository
       console.log(`[Worker] Generated JSON for trip ${tripId}. Saving to DB...`);
-      // In a real scenario, you'd iterate over `generatedItinerary.days` and save to the ItineraryItems collection
+      const savedItinerary = await tripRepository.saveAIGeneratedItinerary(tripId, generatedItinerary);
       
-      // 3. (Future) Trigger Socket.io event to notify the specific user
+      // 3. Trigger Socket.io event to notify the specific user
       console.log(`[Worker] Successfully completed job ${job.id}`);
-      return { success: true, userId, itinerary: generatedItinerary };
+      
+      // Return the saved document so the frontend can render it with actual DB IDs
+      return { success: true, userId, itinerary: savedItinerary };
 
     } catch (error) {
       console.error(`[Worker] Job ${job.id} failed:`, error.message);

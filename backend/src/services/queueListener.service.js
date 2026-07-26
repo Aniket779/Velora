@@ -5,6 +5,11 @@ const redisConnection = {
   port: process.env.REDIS_PORT || 6379,
 };
 
+if (process.env.REDIS_PASSWORD) {
+  redisConnection.password = process.env.REDIS_PASSWORD;
+  redisConnection.tls = {}; // Required for Upstash
+}
+
 class QueueListenerService {
   constructor(io) {
     this.io = io;

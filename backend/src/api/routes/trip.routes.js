@@ -5,6 +5,7 @@ const router = express.Router();
 
 // Maps HTTP endpoints to Controller methods cleanly
 router.post('/', tripController.createTrip);
+router.post('/generate', tripController.generateTrip);
 router.get('/:id', tripController.getTrip);
 
 module.exports = router;

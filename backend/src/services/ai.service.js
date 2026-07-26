@@ -2,12 +2,17 @@ const { Queue } = require('bullmq');
 const AppError = require('../utils/AppError');
 
 // Initialize BullMQ connection
-const aiQueue = new Queue('ai-generation-queue', {
-  connection: {
-    host: process.env.REDIS_HOST || '127.0.0.1',
-    port: process.env.REDIS_PORT || 6379,
-  },
-});
+const redisConnection = {
+  host: process.env.REDIS_HOST || '127.0.0.1',
+  port: process.env.REDIS_PORT || 6379,
+};
+
+if (process.env.REDIS_PASSWORD) {
+  redisConnection.password = process.env.REDIS_PASSWORD;
+  redisConnection.tls = {}; // Required for Upstash
+}
+
+const aiQueue = new Queue('ai-generation-queue', { connection: redisConnection });
 
 class AIService {
   /**
