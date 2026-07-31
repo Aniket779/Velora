@@ -155,14 +155,45 @@ async function checkGemini(key, model) {
 
     if (e.status === 429) {
       const retry = (e.details || []).find((d) => d.retryDelay)?.retryDelay;
+
+      // The distinction that matters, and it is easy to miss because both
+      // cases arrive as a 429 telling you to retry shortly:
+      //
+      //   limit: 0    no quota allocated at all. Retrying NEVER succeeds.
+      //   limit: N>0  a real allocation you are exceeding. Waiting works.
+      //
+      // Google sends a retryDelay either way, which actively misleads you in
+      // the first case.
+      const zeroQuota = /limit:\s*0\b/.test(e.message);
+
       info('');
-      info('=> Rate limited. The key works; you are just going too fast.');
-      if (retry) info(`   Google asks you to wait ${retry}.`);
-      if (/per ?day|PerDay/i.test(e.message)) {
-        info('   This is the DAILY cap — it resets at midnight Pacific time.');
+      if (zeroQuota) {
+        info('=> "limit: 0" — this project has NO free-tier allocation for this');
+        info('   model. This is NOT a throughput problem, and waiting will never');
+        info('   fix it, whatever the retry delay says.');
+        info('');
+        info('   Most likely: the key belongs to a Google Cloud project that was');
+        info('   not created through AI Studio. Projects created in the Cloud');
+        info('   console often carry no free-tier grant. AI Studio projects are');
+        info('   usually named gen-lang-client-<digits>.');
+        info('');
+        info('   Try, in order:');
+        info('   1. https://aistudio.google.com/apikey -> Create API key');
+        info('      -> choose "Create in NEW project" (not an existing one)');
+        info('   2. If that also reports limit: 0, the free tier is unavailable');
+        info('      to your account. Enable pay-as-you-go billing — this project');
+        info('      costs roughly $0.02-0.05 per generated itinerary.');
+        info('   3. Or set OPENAI_API_KEY instead; llm.js supports both.');
       } else {
-        info('   Free tier allows ~15 requests/minute on gemini-2.0-flash.');
-        info('   GEMINI_MODEL=gemini-2.0-flash-lite doubles that to 30/min.');
+        info('=> Rate limited on a real allocation. The key works; you are');
+        info('   going too fast.');
+        if (retry) info(`   Google asks you to wait ${retry}.`);
+        if (/per ?day|PerDay|daily/i.test(e.message)) {
+          info('   This is the DAILY cap — it resets at midnight Pacific time.');
+        } else {
+          info('   GEMINI_MODEL=gemini-2.0-flash-lite allows roughly double the');
+          info('   per-minute throughput of gemini-2.0-flash.');
+        }
       }
     }
     return false;

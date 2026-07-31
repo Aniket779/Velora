@@ -287,6 +287,11 @@ class LlmClient {
         if (!retryable && status >= 400 && status < 500) break;
 
         if (status === 429) {
+          // "limit: 0" means no allocation exists. Google still sends a
+          // retryDelay, but honouring it just burns a worker slot for 30
+          // seconds to arrive at the same failure. Fail immediately.
+          if (/limit:\s*0\b/.test(detail || '')) break;
+
           // A rate limit is not a transient network blip, and backing off by
           // 1s/2s/4s is actively harmful: free-tier quotas are per-minute, so
           // all three retries land inside the same window, fail, and each one
@@ -314,8 +319,22 @@ class LlmClient {
       throw new AppError(`${this.keyName} was rejected by ${this.provider}. Check the key is valid.`, 502);
     }
     if (status === 429) {
-      // Daily exhaustion and per-minute throttling need different advice —
-      // "retry shortly" is wrong and frustrating if the quota resets tomorrow.
+      // Three different problems arrive as 429, and telling them apart is the
+      // whole value of this block. Google says "please retry" for all three,
+      // which is actively wrong for the first.
+      //
+      //   limit: 0  -> no quota allocated. Retrying can never succeed.
+      //   per-day   -> allocation exhausted until midnight Pacific.
+      //   per-min   -> genuine throughput; waiting works.
+      if (/limit:\s*0\b/.test(detail || '')) {
+        throw new AppError(
+          `This ${this.provider} project has no free-tier quota for ${this.model} ` +
+            `(the API reports "limit: 0"), so retrying will not help. Create a key in a new ` +
+            `project at aistudio.google.com/apikey, enable billing, or set OPENAI_API_KEY.`,
+          503
+        );
+      }
+
       const perDay = /per ?day|PerDay|daily/i.test(detail || '');
       if (perDay) {
         throw new AppError(
