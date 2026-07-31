@@ -1,5 +1,6 @@
 const Trip = require('../models/Trip');
 const Itinerary = require('../models/Itinerary');
+const mongoose = require('mongoose');
 
 class TripRepository {
   async create(tripData) {
@@ -15,7 +16,6 @@ class TripRepository {
     return await Trip.find({ owner_id: userId }).sort({ startDate: 1 });
   }
 
-  // Example of isolating complex Mongoose queries
   async findUpcomingTripsForUser(userId) {
     return await Trip.find({
       owner_id: userId,
@@ -25,27 +25,44 @@ class TripRepository {
 
   // --- Versioning & AI Persistence ---
   async saveAIGeneratedItinerary(tripId, generatedData) {
-    // 1. Create the new Itinerary Document
     const itinerary = new Itinerary({
-      tripId,
+      tripId: tripId || 'temp_trip_' + Date.now(),
+      ownerId: generatedData.ownerId,
+      title: generatedData.title || generatedData.trip_title,
+      trip_title: generatedData.trip_title || `Trip to ${generatedData.destination || 'Destination'}`,
+      summary: generatedData.summary,
+      destination: generatedData.destination,
+      origin: generatedData.origin,
+      profile: generatedData.profile || null,
       versionName: 'AI Original Draft',
       isAIOriginal: true,
-      days: generatedData.days
+      days: generatedData.days || [],
+      totalEstimatedCostInr: generatedData.totalEstimatedCostInr,
+      personalisationNotes: generatedData.personalisationNotes || [],
+      packingReminders: generatedData.packingReminders || [],
+      destinationIntelligence: generatedData.destinationIntelligence || null,
+      intelligenceMeta: generatedData.intelligenceMeta || null,
+      generationMeta: generatedData.generationMeta || null,
+      travelData: generatedData.travelData || {
+        destinationInfo: null,
+        hotels: [],
+        restaurants: [],
+        places: [],
+        flights: []
+      }
     });
+
     const savedItinerary = await itinerary.save();
 
-    // 2. Update the Trip document pointers
-    // Note: If tripId is temporary ('temp_trip_123'), we would normally create a Trip here first.
-    // For now, if tripId is a valid ObjectId, we update it.
     if (mongoose.Types.ObjectId.isValid(tripId)) {
       await Trip.findByIdAndUpdate(tripId, {
         originalAIVersion: savedItinerary._id,
         currentVersion: savedItinerary._id,
-        title: generatedData.trip_title // Auto-fill title from AI
+        title: generatedData.trip_title
       });
     }
 
-    return savedItinerary;
+    return savedItinerary.toObject();
   }
 }
 
