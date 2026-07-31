@@ -52,6 +52,100 @@ const describeAxiosError = (err) => {
   return { status: 0, message: err.message };
 };
 
+/**
+ * Tries a minimal call against every model the key can see, and reports which
+ * ones actually have quota.
+ *
+ * Worth doing because quota is granted PER MODEL. "No free tier" is rarely
+ * account-wide — Google moves the free allocation between models over time, so
+ * gemini-2.0-flash returning limit:0 says nothing about gemini-2.5-flash.
+ * Guessing which one works wastes more time than measuring it.
+ *
+ * Costs nothing where quota is zero, and stops at the first model that works.
+ */
+async function findWorkingModel(key, models) {
+  head('5. Probing every available model for one with quota');
+
+  // Cheapest and most likely to carry a free allocation first.
+  const rank = (m) => {
+    if (/flash-lite/.test(m)) return 0;
+    if (/flash/.test(m) && !/thinking|exp|preview/.test(m)) return 1;
+    if (/flash/.test(m)) return 2;
+    if (/pro/.test(m) && !/exp|preview/.test(m)) return 3;
+    return 4;
+  };
+
+  const candidates = models
+    .filter((m) => (m.supportedGenerationMethods || []).includes('generateContent'))
+    .map((m) => m.name.replace(/^models\//, ''))
+    // Tuned/legacy endpoints aren't useful here.
+    .filter((m) => !/embedding|aqa|imagen|veo|tts|image-generation|native-audio|live-/.test(m))
+    .sort((a, b) => rank(a) - rank(b) || a.localeCompare(b));
+
+  info(`${candidates.length} text models to try\n`);
+
+  const working = [];
+  let zeroQuota = 0;
+
+  for (const m of candidates) {
+    try {
+      await axios.post(
+        `${GEMINI_BASE}/models/${m}:generateContent`,
+        {
+          contents: [{ role: 'user', parts: [{ text: 'Say OK' }] }],
+          generationConfig: { maxOutputTokens: 5, temperature: 0 },
+        },
+        { params: { key }, timeout: 25_000 }
+      );
+      ok(`${m}  <-- WORKS`);
+      working.push(m);
+      break; // one is enough
+    } catch (err) {
+      const e = describeAxiosError(err);
+      if (e.status === 429 && /limit:\s*0\b/.test(e.message)) {
+        zeroQuota++;
+        console.log(`${DIM}  ---   ${m} — no quota (limit: 0)${RESET}`);
+      } else if (e.status === 429) {
+        // Throttled means there IS an allocation. That's a usable model.
+        warn(`${m} — throttled, but quota EXISTS. Usable once it resets.`);
+        working.push(m);
+        break;
+      } else if (e.status === 404) {
+        console.log(`${DIM}  ---   ${m} — not available for generateContent${RESET}`);
+      } else {
+        console.log(`${DIM}  ---   ${m} — HTTP ${e.status}: ${String(e.message).slice(0, 80)}${RESET}`);
+      }
+    }
+    // Small gap so a throttled account doesn't compound while probing.
+    await new Promise((r) => setTimeout(r, 400));
+  }
+
+  console.log('');
+  if (working.length) {
+    ok(`Use this model. Put it in backend/.env:`);
+    info('');
+    info(`  GEMINI_MODEL=${working[0]}`);
+    info('');
+    info('Then restart the server and run this check again.');
+    return true;
+  }
+
+  bad(`No model has quota — ${zeroQuota} returned limit: 0`);
+  info('');
+  info('The free tier is genuinely unavailable to this account. Two real options:');
+  info('');
+  info('  1. Enable billing at https://aistudio.google.com/app/billing');
+  info('     Roughly $0.02-0.05 per itinerary, and destination briefings are');
+  info('     cached for 90 days, so repeat cities cost nothing. Set a budget cap.');
+  info('');
+  info('  2. Use OpenAI instead — set OPENAI_API_KEY in backend/.env.');
+  info('     src/ai/llm.js already supports it; no code change needed.');
+  info('');
+  info('Velora still runs without either, returning clearly-labelled placeholder');
+  info('content — but the retrieval grounding will not be visible in a demo.');
+  return false;
+}
+
 async function checkGemini(key, model) {
   // ---------------------------------------------------------------- 1. shape
   head('1. Key format');
@@ -168,22 +262,14 @@ async function checkGemini(key, model) {
 
       info('');
       if (zeroQuota) {
-        info('=> "limit: 0" — this project has NO free-tier allocation for this');
-        info('   model. This is NOT a throughput problem, and waiting will never');
-        info('   fix it, whatever the retry delay says.');
+        info(`=> "limit: 0" — no quota allocated for ${model}. Not a throughput`);
+        info('   problem; waiting will never fix it, whatever the delay says.');
         info('');
-        info('   Most likely: the key belongs to a Google Cloud project that was');
-        info('   not created through AI Studio. Projects created in the Cloud');
-        info('   console often carry no free-tier grant. AI Studio projects are');
-        info('   usually named gen-lang-client-<digits>.');
-        info('');
-        info('   Try, in order:');
-        info('   1. https://aistudio.google.com/apikey -> Create API key');
-        info('      -> choose "Create in NEW project" (not an existing one)');
-        info('   2. If that also reports limit: 0, the free tier is unavailable');
-        info('      to your account. Enable pay-as-you-go billing — this project');
-        info('      costs roughly $0.02-0.05 per generated itinerary.');
-        info('   3. Or set OPENAI_API_KEY instead; llm.js supports both.');
+        info('   Quota is granted PER MODEL, so another model may still work.');
+        info('   Checking all of them now rather than guessing.');
+
+        // The useful next step, run automatically instead of being advice.
+        return await findWorkingModel(key, models);
       } else {
         info('=> Rate limited on a real allocation. The key works; you are');
         info('   going too fast.');
