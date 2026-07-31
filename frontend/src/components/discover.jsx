@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Sparkles, History, Hotel, Utensils, MapPin, Loader2, Navigation2,
@@ -6,7 +6,9 @@ import {
 import { discover, library } from '../api/client';
 import { HotelCard, RestaurantCard, PlaceCard } from './cards';
 import { EmptyState } from './states';
-import MapView from './MapView';
+// Same chunk as the itinerary's map — Vite reuses it, so opening a map here
+// after viewing one there costs no second download.
+const MapView = lazy(() => import('./MapView'));
 
 /**
  * ============================================================================
@@ -106,7 +108,9 @@ export function NearbyPanel({ lat, lng, title = 'Nearby' }) {
           message="Widen the radius to search a larger area."
         />
       ) : view === 'map' ? (
-        <MapView items={items} type={tab} />
+        <Suspense fallback={<div className="map-loading"><Loader2 size={22} className="spin" /> Loading map…</div>}>
+          <MapView items={items} type={tab} />
+        </Suspense>
       ) : (
         <div className="cards-grid" aria-live="polite">
           {items.map((item, i) => {

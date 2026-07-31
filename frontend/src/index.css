@@ -1410,3 +1410,18 @@ select.input-field option { background: var(--bg-secondary); color: white; }
   .account-menu__name { display: none; }
   .auth-modal { padding: 1.75rem 1.25rem 1.25rem; }
 }
+
+/* Placeholder while the map chunk downloads. Matches the map's own height so
+   the layout doesn't jump when it swaps in. */
+.map-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  min-height: 420px;
+  background: var(--bg-glass);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}

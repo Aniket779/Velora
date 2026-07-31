@@ -1,10 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, lazy, Suspense } from 'react';
 import {
   MapPin, Utensils, BedDouble, Navigation, Plane, Hotel, Clock, ArrowRight,
   Map, List, Eye, Info, ShoppingBag, Sparkles, Coffee, Wallet, CheckCircle2,
+  Loader2,
 } from 'lucide-react';
-import MapView from './MapView';
-import VRDestinationModal from './VRDestinationModal';
+/**
+ * Loaded on demand, not upfront.
+ *
+ * These two drag in the heaviest dependencies in the project — Leaflet for the
+ * map, and Pannellum (a full 360° panorama engine) for the VR viewer. Imported
+ * normally, both ship in the bundle that every first-time visitor downloads
+ * before they see anything, even though the map only appears once you open an
+ * itinerary and the VR viewer only when you click it.
+ *
+ * React.lazy splits each into its own chunk, fetched the first time it's
+ * actually rendered. Both were already conditionally rendered, which is what
+ * makes this safe rather than a refactor.
+ */
+const MapView = lazy(() => import('./MapView'));
+const VRDestinationModal = lazy(() => import('./VRDestinationModal'));
 import DestinationIntelligence from './DestinationIntelligence';
 import { HotelCard, FlightCard, RestaurantCard, PlaceCard } from './cards';
 import { EmptyState } from './states';
@@ -119,7 +133,11 @@ export default function ItineraryDisplay({ itinerary, onBookItem }) {
       </div>
 
       {showVR && intelligence && (
-        <VRDestinationModal destination={{ ...intelligence, cityName: intelligence.cityName || destination }} onClose={() => setShowVR(false)} />
+        // Suspense is required, not optional — a lazy component rendered
+        // without a boundary above it throws instead of waiting.
+        <Suspense fallback={<div className="modal-backdrop"><Loader2 size={28} className="spin" /></div>}>
+          <VRDestinationModal destination={{ ...intelligence, cityName: intelligence.cityName || destination }} onClose={() => setShowVR(false)} />
+        </Suspense>
       )}
 
       {/* Category Navigation Pills */}
@@ -456,7 +474,9 @@ function InventorySection({
       </div>
 
       {hasMap && viewMode === 'map' ? (
-        <MapView items={items} type={mapType} />
+        <Suspense fallback={<div className="map-loading"><Loader2 size={22} className="spin" /> Loading map…</div>}>
+          <MapView items={items} type={mapType} />
+        </Suspense>
       ) : (
         <>
           <div className="cards-grid">{items.slice(0, visible).map(render)}</div>
