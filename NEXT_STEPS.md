@@ -12,7 +12,8 @@ Your database is empty. That's why every tab showed `(0)`.
 cd backend
 npm run seed            # 171 destinations, 12,420 records — takes ~30s
 npm run sync-indexes    # drops the broken shareToken index
-npm run dev             # look for: [AI] Provider: gemini (gemini-2.0-flash)
+npm run check-ai        # confirms your key AND finds a model with quota
+npm run dev             # look for: [AI] Provider: gemini (...)
 ```
 
 ```bash
@@ -37,7 +38,7 @@ that city costs 1 — the briefing is cached in MongoDB for 90 days.
 Wait ~60s and press Retry. If it keeps happening, put this in `backend/.env`:
 
 ```
-GEMINI_MODEL=gemini-2.0-flash-lite   # 30 req/min instead of 15
+GEMINI_MODEL=<whatever check-ai says works>
 ```
 
 Seed the briefings once up front and normal use never touches the limit.

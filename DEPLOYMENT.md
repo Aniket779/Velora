@@ -101,7 +101,7 @@ burning free-tier build minutes.
    REDIS_PORT      6379
    REDIS_PASSWORD  <upstash password>
    GEMINI_API_KEY  <your key>
-   GEMINI_MODEL    gemini-2.0-flash
+   GEMINI_MODEL    gemini-3.1-flash-lite
    JWT_SECRET      <generate a NEW one, see below>
    JWT_EXPIRES_IN  7d
    CLIENT_URL      http://localhost:5173
@@ -120,7 +120,7 @@ burning free-tier build minutes.
 
    ```
    [DB] Connected to Velora
-   [AI] Provider: gemini (gemini-2.0-flash)
+   [AI] Provider: gemini (gemini-3.1-flash-lite)
    [Server] Listening on 10000 (production)
    ```
 
@@ -229,7 +229,8 @@ Open your Vercel URL and walk the whole path:
 | Socket never connects, polls instead | Socket.io CORS | Same `CLIENT_URL` fix, check the browser console |
 | First load takes ~50s | Free tier cold start | Step 5 |
 | `Cannot find module 'bcryptjs'` | Stale lockfile | `npm install` locally, commit `package-lock.json` |
-| Rate limit errors on generate | Gemini free tier | `GEMINI_MODEL=gemini-2.0-flash-lite` doubles it to 30/min |
+| 429 `limit: 0` on generate | That model has no free-tier quota | `npm run check-ai` locally — it names one that does |
+| 429 with a real limit (e.g. 15) | Genuine throttling | Wait, or pick a model with higher throughput |
 
 **Render logs are the first place to look**, not the browser. Dashboard →
 your service → Logs.

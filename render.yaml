@@ -55,5 +55,7 @@ services:
 
       - key: JWT_EXPIRES_IN
         value: 7d
+      # Verify with `npm run check-ai` before deploying — Google moves the
+      # free-tier grant between models, and the wrong one returns limit: 0.
       - key: GEMINI_MODEL
-        value: gemini-2.0-flash
+        value: gemini-3.1-flash-lite
