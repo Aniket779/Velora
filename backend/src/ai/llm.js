@@ -121,8 +121,40 @@ class LlmClient {
 
     if (this.provider) {
       console.log(`[AI] Provider: ${this.provider} (${this.model})`);
+      this._warnIfKeyLooksWrong();
     } else {
       console.warn('[AI] ⚠️  No GEMINI_API_KEY or OPENAI_API_KEY set — placeholder content only.');
+    }
+  }
+
+  /**
+   * Catches the wrong KIND of credential at boot.
+   *
+   * Google issues several token formats and they are not interchangeable.
+   * A `ya29.`/`AQ.` OAuth token from a sign-in flow (Antigravity, Code Assist,
+   * gcloud) authenticates against a different service entirely — paste one here
+   * and the failure arrives much later, as a confusing error on the first
+   * generation, long after you've stopped thinking about the key.
+   *
+   * A warning, not a hard failure: Google may change formats, and being wrong
+   * about that shouldn't stop the server booting.
+   */
+  _warnIfKeyLooksWrong() {
+    if (this.provider !== 'gemini') return;
+
+    if (/^(AQ\.|ya29\.)/.test(this.geminiKey)) {
+      console.warn(
+        '\n[AI] ⚠️  GEMINI_API_KEY looks like an OAuth token, not an API key.\n' +
+          '     Keys starting with "AQ." or "ya29." come from Google sign-in flows and\n' +
+          '     will NOT work with the Generative Language API.\n' +
+          '     Get a free one at https://aistudio.google.com/apikey — it starts with "AIza".\n' +
+          '     Diagnose with: npm run check-ai\n'
+      );
+    } else if (!/^AIza[A-Za-z0-9_-]{35}$/.test(this.geminiKey)) {
+      console.warn(
+        `[AI] ⚠️  GEMINI_API_KEY has an unexpected format (${this.geminiKey.length} chars, ` +
+          `expected 39 starting with "AIza"). Run: npm run check-ai`
+      );
     }
   }
 
