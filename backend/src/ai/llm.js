@@ -108,7 +108,12 @@ class LlmClient {
     this.provider = this.geminiKey ? 'gemini' : this.openaiKey ? 'openai' : null;
 
     this.model = this.provider === 'gemini'
-      ? (process.env.GEMINI_MODEL || 'gemini-2.0-flash')
+      // Google moves the free-tier grant onto newer models as they ship, and
+      // retires it from older ones — gemini-2.0-flash returns "limit: 0" on
+      // accounts that have plenty of quota elsewhere. Any hardcoded default
+      // here has a shelf life, which is what `npm run check-ai` is for: it
+      // probes every model the key can see and names one that works.
+      ? (process.env.GEMINI_MODEL || 'gemini-3.1-flash-lite')
       : (process.env.OPENAI_MODEL || 'gpt-4o-2024-08-06');
 
     this.maxAttempts = Number(process.env.AI_MAX_ATTEMPTS) || 3;
@@ -173,13 +178,20 @@ class LlmClient {
 
   logCost(label, usage) {
     if (!usage) return;
-    const p = PRICING[this.model] || { input: 0, output: 0 };
+    // An unknown model is NOT free — we simply don't have its rate. Defaulting
+    // to zero would quietly report "cost=free tier" for a paid model and hide
+    // a real bill.
+    const p = PRICING[this.model];
     const inTok = usage.prompt_tokens ?? usage.promptTokenCount ?? 0;
     const outTok = usage.completion_tokens ?? usage.candidatesTokenCount ?? 0;
-    const cost = (inTok / 1e6) * p.input + (outTok / 1e6) * p.output;
+    const cost = p ? (inTok / 1e6) * p.input + (outTok / 1e6) * p.output : null;
     console.log(
       `[AI] ${label} ${this.provider} in=${inTok} out=${outTok} ` +
-        (cost > 0 ? `cost≈$${cost.toFixed(4)}` : 'cost=free tier')
+        (cost === null
+          ? `cost=unknown (${this.model} not in PRICING)`
+          : cost > 0
+            ? `cost≈$${cost.toFixed(4)}`
+            : 'cost=free tier')
     );
   }
 

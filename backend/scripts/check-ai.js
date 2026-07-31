@@ -35,6 +35,10 @@ const head = (m) => console.log(`\n${m}\n${'-'.repeat(m.length)}`);
 
 const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta';
 
+// `npm run check-ai -- --all` probes every model instead of stopping at the
+// first that works.
+const PROBE_ALL = process.argv.includes('--all');
+
 const describeAxiosError = (err) => {
   if (err.response) {
     const d = err.response.data?.error || {};
@@ -99,7 +103,12 @@ async function findWorkingModel(key, models) {
       );
       ok(`${m}  <-- WORKS`);
       working.push(m);
-      break; // one is enough
+      // Stop at the first hit by default. `--all` keeps going, because the
+      // cheapest model that works is not necessarily the best one for this
+      // job: Velora asks for a large strict-schema JSON itinerary, and the
+      // heavier flash models hold a complex schema together noticeably better
+      // than the lite ones.
+      if (!PROBE_ALL) break;
     } catch (err) {
       const e = describeAxiosError(err);
       if (e.status === 429 && /limit:\s*0\b/.test(e.message)) {
@@ -109,7 +118,7 @@ async function findWorkingModel(key, models) {
         // Throttled means there IS an allocation. That's a usable model.
         warn(`${m} — throttled, but quota EXISTS. Usable once it resets.`);
         working.push(m);
-        break;
+        if (!PROBE_ALL) break;
       } else if (e.status === 404) {
         console.log(`${DIM}  ---   ${m} — not available for generateContent${RESET}`);
       } else {
@@ -122,10 +131,25 @@ async function findWorkingModel(key, models) {
 
   console.log('');
   if (working.length) {
-    ok(`Use this model. Put it in backend/.env:`);
+    if (PROBE_ALL && working.length > 1) {
+      ok(`${working.length} models have quota:`);
+      working.forEach((m) => info(`  - ${m}`));
+      info('');
+      info('Prefer a non-lite "flash" if one is listed. Velora asks for a large');
+      info('strict-schema JSON itinerary, and the heavier models keep that schema');
+      info('intact more reliably.');
+      info('');
+    }
+    ok('Put this in backend/.env:');
     info('');
     info(`  GEMINI_MODEL=${working[0]}`);
     info('');
+    if (!PROBE_ALL) {
+      info('That is the cheapest model that works. To see every model with quota');
+      info('(a heavier one may produce better itineraries):');
+      info('  npm run check-ai -- --all');
+      info('');
+    }
     info('Then restart the server and run this check again.');
     return true;
   }
