@@ -7,8 +7,7 @@
 # The worker deliberately runs INSIDE this service rather than as a separate
 # one. On the free tier two services would both sleep independently, and the
 # queue would stall while the worker was asleep. Splitting them is the right
-# call under real load — see IMPLEMENTATION_ROADMAP.md M10 — but it's the wrong
-# call for a free-tier demo.
+# call under real load, but the wrong call for a free-tier demo.
 # =============================================================================
 
 services:

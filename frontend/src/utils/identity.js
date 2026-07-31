@@ -50,7 +50,7 @@ export function getUserId() {
  * Stored in localStorage. The honest tradeoff: any script that runs on this
  * page can read it, so an XSS bug becomes account takeover. The more secure
  * alternative is an httpOnly cookie the JavaScript cannot touch, which needs a
- * refresh-token flow to go with it. See INTERVIEW_PREP.md.
+ * refresh-token flow to go with it. Chosen deliberately for simplicity.
  */
 export function getToken() {
   try {
