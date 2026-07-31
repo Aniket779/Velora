@@ -1,204 +1,463 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+
+/* ==========================================================================
+   VELORA DESIGN SYSTEM
+   --------------------------------------------------------------------------
+   Dark-first glassmorphism. The existing look is kept — this refines it
+   rather than replacing it:
+     - contrast raised to meet WCAG AA (the old --text-muted failed at ~4.0:1)
+     - motion tokens so timing is consistent and respects reduced-motion
+     - a real focus-visible ring (the old CSS killed outlines with no
+       replacement, leaving keyboard users with no visible focus at all)
+     - an elevation scale instead of ad-hoc box-shadows
+   ========================================================================== */
 
 :root {
-  /* Colors */
-  --bg-primary: #090a10;
-  --bg-secondary: #12131e;
-  --bg-glass: rgba(18, 20, 32, 0.75);
-  --bg-glass-hover: rgba(28, 31, 48, 0.85);
+  /* --- Surfaces ------------------------------------------------------- */
+  --bg-primary: #07080d;
+  --bg-secondary: #10121c;
+  --bg-tertiary: #171a27;
+  --bg-glass: rgba(18, 20, 32, 0.72);
+  --bg-glass-hover: rgba(30, 33, 51, 0.85);
+  --bg-elevated: rgba(24, 27, 42, 0.92);
+
+  /* --- Text ------------------------------------------------------------
+     --text-muted raised from #64748b (~4.0:1, fails AA) to #94a3b8-adjacent
+     values that pass 4.5:1 on --bg-primary.                              */
   --text-primary: #ffffff;
-  --text-secondary: #94a3b8;
-  --text-muted: #64748b;
-  
+  --text-secondary: #b6c2d4;
+  --text-muted: #8b9ab0;
+
+  /* --- Accents -------------------------------------------------------- */
   --accent-primary: #6366f1;
+  --accent-primary-soft: rgba(99, 102, 241, 0.14);
   --accent-secondary: #a855f7;
   --accent-teal: #14b8a6;
+  --accent-gold: #fbbf24;
   --accent-gradient: linear-gradient(135deg, #6366f1, #a855f7);
   --accent-gradient-teal: linear-gradient(135deg, #0d9488, #2563eb);
-  
-  --border-glass: rgba(255, 255, 255, 0.1);
-  --border-glass-light: rgba(255, 255, 255, 0.05);
+  --accent-gradient-warm: linear-gradient(135deg, #f59e0b, #ec4899);
 
-  /* Shadows */
-  --shadow-glass: 0 12px 40px 0 rgba(0, 0, 0, 0.45);
-  --shadow-glow: 0 0 25px rgba(99, 102, 241, 0.4);
-  --shadow-glow-teal: 0 0 25px rgba(20, 184, 166, 0.4);
+  /* --- Semantic ------------------------------------------------------- */
+  --success: #4ade80;
+  --success-soft: rgba(34, 197, 94, 0.12);
+  --warning: #fbbf24;
+  --warning-soft: rgba(251, 191, 36, 0.12);
+  --danger: #fb7185;
+  --danger-soft: rgba(251, 113, 133, 0.12);
 
-  /* Radius */
-  --radius-sm: 8px;
+  /* --- Borders -------------------------------------------------------- */
+  --border-glass: rgba(255, 255, 255, 0.10);
+  --border-glass-light: rgba(255, 255, 255, 0.055);
+  --border-strong: rgba(255, 255, 255, 0.18);
+
+  /* --- Elevation ------------------------------------------------------ */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.25);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.45);
+  --shadow-xl: 0 28px 70px rgba(0, 0, 0, 0.55);
+  --shadow-glass: var(--shadow-md);
+  --shadow-glow: 0 0 28px rgba(99, 102, 241, 0.35);
+  --shadow-glow-teal: 0 0 28px rgba(20, 184, 166, 0.35);
+
+  /* --- Radius --------------------------------------------------------- */
+  --radius-xs: 6px;
+  --radius-sm: 10px;
   --radius-md: 16px;
-  --radius-lg: 24px;
+  --radius-lg: 22px;
+  --radius-xl: 28px;
   --radius-full: 9999px;
+
+  /* --- Motion ---------------------------------------------------------
+     One place to tune timing. Every transition below references these.  */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --dur-fast: 140ms;
+  --dur-base: 240ms;
+  --dur-slow: 420ms;
+
+  /* --- Layout --------------------------------------------------------- */
+  --container: 1240px;
+  --header-h: 68px;
 }
 
+/* Everything animated funnels through these two custom properties, so the
+   reduced-motion override below is a single point of control. */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
+html { scroll-behavior: smooth; }
+
 body {
-  font-family: 'Inter', sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
   background-color: var(--bg-primary);
   color: var(--text-primary);
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
-  background-image: 
-    radial-gradient(circle at 10% 10%, rgba(99, 102, 241, 0.12), transparent 450px),
-    radial-gradient(circle at 90% 80%, rgba(168, 85, 247, 0.12), transparent 450px),
-    radial-gradient(circle at 50% 50%, rgba(20, 184, 166, 0.06), transparent 600px);
+  text-rendering: optimizeLegibility;
+  background-image:
+    radial-gradient(circle at 12% 8%, rgba(99, 102, 241, 0.13), transparent 480px),
+    radial-gradient(circle at 88% 78%, rgba(168, 85, 247, 0.11), transparent 480px),
+    radial-gradient(circle at 50% 45%, rgba(20, 184, 166, 0.05), transparent 620px);
   background-attachment: fixed;
 }
 
 h1, h2, h3, h4, h5, h6 {
   font-family: 'Outfit', sans-serif;
   font-weight: 600;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.025em;
+  line-height: 1.2;
 }
 
-/* Glassmorphism Utilities */
+img { max-width: 100%; display: block; }
+
+/* ==========================================================================
+   ACCESSIBILITY PRIMITIVES
+   ========================================================================== */
+
+/* A real focus ring. The previous stylesheet set `outline: none` on inputs
+   with no replacement, so keyboard users had no visible focus anywhere. */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 3px;
+  border-radius: var(--radius-xs);
+}
+
+/* Mouse users don't get the ring; keyboard users always do. */
+:where(a, button, input, select, textarea):focus:not(:focus-visible) {
+  outline: none;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.skip-link {
+  position: absolute;
+  top: -100px;
+  left: 1rem;
+  z-index: 999;
+  background: var(--accent-primary);
+  color: #fff;
+  padding: 0.75rem 1.25rem;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  transition: top var(--dur-fast) var(--ease-out);
+}
+.skip-link:focus { top: 1rem; }
+
+/* Respect the OS setting. The pulse and float animations below are
+   vestibular triggers, so they stop entirely rather than just shortening. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .float-slow, .pulse-glow, .shimmer { animation: none !important; }
+}
+
+/* ==========================================================================
+   SURFACES
+   ========================================================================== */
+
 .glass-panel {
   background: var(--bg-glass);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
   border: 1px solid var(--border-glass);
   border-radius: var(--radius-md);
-  box-shadow: var(--shadow-glass);
+  box-shadow: var(--shadow-md);
 }
 
 .glass-panel-hover {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition:
+    transform var(--dur-base) var(--ease-out),
+    border-color var(--dur-base) var(--ease-out),
+    box-shadow var(--dur-base) var(--ease-out),
+    background var(--dur-base) var(--ease-out);
 }
-
 .glass-panel-hover:hover {
   background: var(--bg-glass-hover);
-  border-color: rgba(255, 255, 255, 0.2);
-  transform: translateY(-3px);
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+  border-color: var(--border-strong);
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
 }
+.glass-panel-hover:active { transform: translateY(-1px); }
 
 .text-gradient {
   background: var(--accent-gradient);
   -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
   background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
-/* Basic Layout */
+/* ==========================================================================
+   LAYOUT
+   ========================================================================== */
+
 .app-container {
-  max-width: 1240px;
+  max-width: var(--container);
   margin: 0 auto;
-  padding: 1.5rem 1.5rem 6rem 1.5rem;
+  padding: 1.25rem 1.5rem 6rem;
 }
 
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 0;
-  margin-bottom: 2rem;
+  gap: 1rem;
+  padding: 0.85rem 0;
+  margin-bottom: 1.5rem;
   border-bottom: 1px solid var(--border-glass);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: rgba(7, 8, 13, 0.82);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
 }
 
 .brand-logo {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.7rem;
   text-decoration: none;
   color: white;
+  transition: opacity var(--dur-fast) var(--ease-out);
+}
+.brand-logo:hover { opacity: 0.85; }
+
+.brand-mark {
+  width: 38px; height: 38px;
+  border-radius: 11px;
+  background: var(--accent-gradient);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: var(--shadow-glow);
+  flex-shrink: 0;
 }
 
 .brand-name {
   font-family: 'Outfit', sans-serif;
-  font-size: 1.6rem;
+  font-size: 1.55rem;
   font-weight: 700;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.035em;
 }
 
-/* Service Navigation Tabs Bar (MMT style) */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: 0.875rem;
+}
+
+.header-chip {
+  display: flex; align-items: center; gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.055);
+  padding: 0.45rem 0.95rem;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-glass);
+  color: white;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
+}
+.header-chip:hover { background: rgba(255,255,255,0.1); border-color: var(--border-strong); }
+
+.main-layout {
+  display: grid;
+  grid-template-columns: 272px 1fr;
+  gap: 1.75rem;
+  align-items: start;
+}
+
+/* ==========================================================================
+   HERO / LANDING
+   ========================================================================== */
+
+.hero {
+  position: relative;
+  text-align: center;
+  padding: 3.5rem 1.5rem 2rem;
+  overflow: hidden;
+}
+
+.hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--accent-primary-soft);
+  border: 1px solid rgba(99, 102, 241, 0.32);
+  color: #c7d2fe;
+  padding: 0.4rem 1rem;
+  border-radius: var(--radius-full);
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+}
+
+.hero-title {
+  font-size: clamp(2.1rem, 5.5vw, 3.75rem);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  margin-bottom: 1.1rem;
+  line-height: 1.08;
+}
+
+.hero-sub {
+  color: var(--text-secondary);
+  font-size: clamp(0.95rem, 1.6vw, 1.125rem);
+  max-width: 620px;
+  margin: 0 auto 2rem;
+  line-height: 1.65;
+}
+
+.hero-stats {
+  display: flex;
+  justify-content: center;
+  gap: 2.5rem;
+  flex-wrap: wrap;
+  margin-top: 2.25rem;
+}
+
+.hero-stat-value {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.65rem;
+  font-weight: 700;
+  color: white;
+  line-height: 1;
+}
+.hero-stat-label {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-top: 0.3rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* Decorative orbs. Purely visual, hidden from assistive tech in markup. */
+.hero-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(64px);
+  opacity: 0.5;
+  pointer-events: none;
+  animation: float-slow 14s ease-in-out infinite;
+}
+.hero-orb--a { width: 300px; height: 300px; background: rgba(99,102,241,0.4);  top: -110px; left: -60px; }
+.hero-orb--b { width: 260px; height: 260px; background: rgba(168,85,247,0.32); bottom: -120px; right: -50px; animation-delay: -7s; }
+
+@keyframes float-slow {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50%      { transform: translate(24px, -22px) scale(1.08); }
+}
+
+/* ==========================================================================
+   TABS
+   ========================================================================== */
+
 .service-tabs-container {
   display: flex;
   justify-content: center;
-  margin-bottom: -20px;
+  margin-bottom: -22px;
   position: relative;
   z-index: 10;
 }
 
 .service-tabs {
   display: inline-flex;
-  gap: 0.5rem;
-  background: rgba(15, 17, 26, 0.95);
-  padding: 0.5rem;
+  gap: 0.35rem;
+  background: rgba(13, 15, 24, 0.94);
+  padding: 0.4rem;
   border-radius: var(--radius-full);
   border: 1px solid var(--border-glass);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  box-shadow: var(--shadow-lg);
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
 }
+.service-tabs::-webkit-scrollbar { display: none; }
 
 .service-tab {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 0.6rem;
-  padding: 0.65rem 1.4rem;
+  gap: 0.55rem;
+  padding: 0.65rem 1.35rem;
   border-radius: var(--radius-full);
   background: transparent;
   border: none;
   color: var(--text-secondary);
+  font-family: inherit;
   font-weight: 600;
   font-size: 0.9rem;
   cursor: pointer;
-  transition: all 0.25s ease;
+  white-space: nowrap;
+  transition: color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
 }
+.service-tab:hover { color: white; background: rgba(255, 255, 255, 0.06); }
 
-.service-tab:hover {
-  color: white;
-  background: rgba(255, 255, 255, 0.05);
-}
-
+.service-tab[aria-selected='true'],
 .service-tab.active {
   background: var(--accent-gradient);
   color: white;
-  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.4);
 }
 
-/* Search Widget (MMT Style Multi-Input) */
+/* ==========================================================================
+   SEARCH WIDGET
+   ========================================================================== */
+
 .search-widget-panel {
-  padding: 2.5rem 2rem 2rem 2rem;
+  padding: 2.25rem 1.75rem 1.75rem;
   border-radius: var(--radius-lg);
-  margin-bottom: 3rem;
-  background: linear-gradient(180deg, rgba(22, 25, 41, 0.85) 0%, rgba(14, 16, 26, 0.85) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  margin-bottom: 2.5rem;
+  background: linear-gradient(180deg, rgba(24, 27, 44, 0.88) 0%, rgba(13, 15, 24, 0.88) 100%);
+  border: 1px solid var(--border-strong);
+  box-shadow: var(--shadow-xl);
 }
 
 .search-inputs-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 0.85rem;
   margin-bottom: 1.5rem;
 }
 
 .input-box {
-  background: rgba(8, 9, 15, 0.6);
+  background: rgba(6, 7, 12, 0.6);
   border: 1px solid var(--border-glass);
-  border-radius: var(--radius-md);
-  padding: 0.85rem 1rem;
-  transition: border-color 0.2s ease, background 0.2s ease;
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 0.95rem;
+  transition: border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
 }
-
-.input-box:focus-within, .input-box:hover {
+.input-box:hover { border-color: var(--border-strong); }
+.input-box:focus-within {
   border-color: var(--accent-primary);
-  background: rgba(15, 17, 28, 0.8);
+  background: rgba(15, 17, 28, 0.85);
+  box-shadow: 0 0 0 3px var(--accent-primary-soft);
 }
 
 .input-label {
   display: flex;
   align-items: center;
-  gap: 0.35rem;
-  font-size: 0.75rem;
+  gap: 0.4rem;
+  font-size: 0.7rem;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--text-secondary);
+  letter-spacing: 0.07em;
+  color: var(--text-muted);
   margin-bottom: 0.35rem;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .input-field {
@@ -211,77 +470,140 @@ h1, h2, h3, h4, h5, h6 {
   font-weight: 500;
   font-family: inherit;
 }
+.input-field::placeholder { color: var(--text-muted); }
 
-.input-field select option {
-  background: var(--bg-secondary);
-  color: white;
+select.input-field {
+  appearance: none;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%238b9ab0%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0 center;
+  background-size: 0.6rem auto;
+  padding-right: 1.4rem;
+}
+select.input-field option { background: var(--bg-secondary); color: white; }
+
+/* ==========================================================================
+   BUTTONS
+   ========================================================================== */
+
+.btn-primary,
+.btn-secondary,
+.btn-ghost {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  border-radius: var(--radius-full);
+  transition:
+    transform var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-base) var(--ease-out),
+    background var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out);
 }
 
-/* Primary Button */
 .btn-primary {
   background: var(--accent-gradient);
   color: white;
   border: none;
-  padding: 0.85rem 2rem;
-  border-radius: var(--radius-full);
-  font-weight: 600;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  font-family: 'Inter', sans-serif;
+  padding: 0.8rem 1.9rem;
+  font-size: 0.95rem;
+  box-shadow: 0 4px 18px rgba(99, 102, 241, 0.32);
+}
+.btn-primary:hover:not(:disabled) { box-shadow: var(--shadow-glow); transform: translateY(-2px); }
+.btn-primary:active:not(:disabled) { transform: translateY(0); }
+.btn-primary:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+
+/* Previously referenced in JSX but never defined — those buttons rendered
+   as unstyled browser defaults. */
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.055);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-glass);
+  padding: 0.6rem 1.2rem;
+  font-size: 0.875rem;
+}
+.btn-secondary:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--border-strong);
+  color: white;
+}
+.btn-secondary[aria-pressed='true'] {
+  background: var(--accent-primary-soft);
+  border-color: var(--accent-primary);
+  color: #c7d2fe;
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-secondary);
+  border: none;
+  padding: 0.5rem 0.85rem;
+  font-size: 0.85rem;
+}
+.btn-ghost:hover { color: white; background: rgba(255,255,255,0.06); }
+
+.btn-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.6rem;
-  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.35);
+  width: 38px; height: 38px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-glass);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--dur-fast) var(--ease-out);
+}
+.btn-icon:hover { background: rgba(255,255,255,0.1); color: white; border-color: var(--border-strong); }
+.btn-icon[aria-pressed='true'] {
+  background: var(--accent-primary-soft);
+  border-color: var(--accent-primary);
+  color: #c7d2fe;
 }
 
-.btn-primary:hover {
-  box-shadow: var(--shadow-glow);
-  transform: translateY(-2px);
-}
-
-/* Listings Section Layout (Sidebar + Main Content) */
-.main-layout {
-  display: grid;
-  grid-template-columns: 280px 1fr;
-  gap: 2rem;
-}
-
-@media (max-width: 900px) {
-  .main-layout {
-    grid-template-columns: 1fr;
-  }
-}
+/* ==========================================================================
+   FILTERS & SORT
+   ========================================================================== */
 
 .filters-sidebar {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
-  padding: 1.5rem;
+  gap: 1.35rem;
+  padding: 1.4rem;
   border-radius: var(--radius-md);
-  height: fit-content;
+  position: sticky;
+  top: calc(var(--header-h) + 1rem);
+  max-height: calc(100vh - var(--header-h) - 2rem);
+  overflow-y: auto;
+}
+
+.filter-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border-glass-light);
+  padding-bottom: 0.85rem;
 }
 
 .filter-group {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.7rem;
   border-bottom: 1px solid var(--border-glass-light);
-  padding-bottom: 1.25rem;
+  padding-bottom: 1.15rem;
 }
-
-.filter-group:last-child {
-  border-bottom: none;
-  padding-bottom: 0;
-}
+.filter-group:last-child { border-bottom: none; padding-bottom: 0; }
 
 .filter-title {
-  font-size: 0.9rem;
-  font-weight: 600;
+  font-size: 0.82rem;
+  font-weight: 700;
   color: var(--text-primary);
-  display: flex;
-  justify-content: space-between;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .filter-checkbox {
@@ -291,113 +613,800 @@ h1, h2, h3, h4, h5, h6 {
   font-size: 0.875rem;
   color: var(--text-secondary);
   cursor: pointer;
+  padding: 0.25rem 0;
+  border-radius: var(--radius-xs);
+  transition: color var(--dur-fast) var(--ease-out);
 }
-
-.filter-checkbox input[type="checkbox"] {
+.filter-checkbox:hover { color: white; }
+.filter-checkbox input[type='checkbox'],
+.filter-checkbox input[type='radio'] {
   accent-color: var(--accent-primary);
-  width: 16px;
-  height: 16px;
+  width: 16px; height: 16px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.filter-count { margin-left: auto; font-size: 0.75rem; color: var(--text-muted); }
+
+.filter-range {
+  width: 100%;
+  accent-color: var(--accent-primary);
+  cursor: pointer;
 }
 
-/* Card Lists */
-.cards-grid {
+.sort-bar {
   display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+  padding: 0.85rem 1.1rem;
+  border-radius: var(--radius-sm);
+  background: var(--bg-glass);
+  border: 1px solid var(--border-glass);
 }
+
+.sort-options { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.8rem;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-glass);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all var(--dur-fast) var(--ease-out);
+}
+.chip:hover { border-color: var(--border-strong); color: white; }
+.chip[aria-pressed='true'] {
+  background: var(--accent-primary-soft);
+  border-color: var(--accent-primary);
+  color: #c7d2fe;
+}
+
+.chip--removable { background: var(--accent-primary-soft); border-color: rgba(99,102,241,0.3); color:#c7d2fe; }
+
+/* ==========================================================================
+   CARDS
+   ========================================================================== */
+
+.cards-grid { display: flex; flex-direction: column; gap: 1.1rem; }
 
 .listing-card {
-  padding: 1.5rem;
+  padding: 1.15rem;
   border-radius: var(--radius-md);
   display: flex;
-  gap: 1.5rem;
-  align-items: center;
+  gap: 1.25rem;
+  align-items: stretch;
   position: relative;
+  overflow: hidden;
 }
 
-@media (max-width: 650px) {
-  .listing-card {
-    flex-direction: column;
-    align-items: flex-start;
-  }
+/* A subtle sheen that sweeps on hover. Cheap, GPU-friendly, and disabled
+   entirely under prefers-reduced-motion. */
+.listing-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(115deg, transparent 40%, rgba(255,255,255,0.045) 50%, transparent 60%);
+  transform: translateX(-100%);
+  transition: transform var(--dur-slow) var(--ease-out);
+  pointer-events: none;
 }
+.listing-card:hover::after { transform: translateX(100%); }
+
+.card-media {
+  width: 168px;
+  min-height: 128px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  flex-shrink: 0;
+  background: var(--bg-tertiary);
+}
+
+.card-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.4rem; }
+
+.card-title {
+  font-size: 1.08rem;
+  color: white;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+.card-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.83rem;
+  color: var(--text-secondary);
+}
+
+.card-aside {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.6rem;
+  min-width: 148px;
+  flex-shrink: 0;
+}
+
+.card-price {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.45rem;
+  font-weight: 700;
+  color: white;
+  line-height: 1;
+}
+.card-price-unit { font-size: 0.72rem; color: var(--text-muted); margin-top: 0.2rem; }
 
 .card-badge {
   position: absolute;
-  top: 12px;
-  right: 16px;
-  background: rgba(99, 102, 241, 0.15);
-  border: 1px solid rgba(99, 102, 241, 0.4);
+  top: 12px; right: 14px;
+  background: var(--accent-primary-soft);
+  border: 1px solid rgba(99, 102, 241, 0.42);
   color: #a5b4fc;
-  padding: 0.25rem 0.75rem;
+  padding: 0.22rem 0.7rem;
   border-radius: var(--radius-full);
-  font-size: 0.75rem;
-  font-weight: 600;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  z-index: 1;
 }
 
-/* Floating AI Assistant Bot Widget (MMT "Customise my trip" bot) */
+.rating-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: rgba(251, 191, 36, 0.14);
+  color: #fcd34d;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--radius-xs);
+  border: 1px solid rgba(251, 191, 36, 0.26);
+}
+
+.tag {
+  font-size: 0.72rem;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.2rem 0.55rem;
+  border-radius: var(--radius-xs);
+  border: 1px solid var(--border-glass-light);
+  color: var(--text-secondary);
+}
+
+.tag-row { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+
+.verified-pill {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: 0.68rem; font-weight: 700;
+  color: var(--success);
+  background: var(--success-soft);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  padding: 0.1rem 0.45rem;
+  border-radius: var(--radius-xs);
+}
+
+/* Flight route visual */
+.flight-route {
+  display: flex; align-items: center; gap: 1.1rem;
+  justify-content: center; flex: 1;
+}
+.flight-time { font-size: 1.2rem; font-weight: 700; font-family: 'Outfit', sans-serif; }
+.flight-line {
+  width: 78px; height: 2px;
+  background: var(--accent-gradient);
+  position: relative;
+  border-radius: 2px;
+}
+.flight-line::before,
+.flight-line::after {
+  content: ''; position: absolute; top: -2.5px;
+  width: 7px; height: 7px; border-radius: 50%; background: var(--accent-primary);
+}
+.flight-line::before { left: -3px; }
+.flight-line::after  { right: -3px; background: var(--accent-secondary); }
+
+/* ==========================================================================
+   FLOATING AI ASSISTANT
+   ========================================================================== */
+
 .floating-bot-trigger {
   position: fixed;
-  bottom: 2rem;
-  right: 2rem;
+  bottom: 1.75rem; right: 1.75rem;
   z-index: 100;
   background: var(--accent-gradient-teal);
   color: white;
   border: none;
-  padding: 0.85rem 1.5rem;
+  padding: 0.85rem 1.45rem;
   border-radius: var(--radius-full);
-  box-shadow: 0 10px 30px rgba(13, 148, 136, 0.4);
+  box-shadow: 0 10px 32px rgba(13, 148, 136, 0.42);
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  font-weight: 600;
-  font-size: 0.95rem;
-  transition: all 0.3s ease;
-  animation: pulse-glow 3s infinite ease-in-out;
+  display: flex; align-items: center; gap: 0.65rem;
+  font-family: inherit;
+  font-weight: 600; font-size: 0.92rem;
+  transition: transform var(--dur-base) var(--ease-spring), box-shadow var(--dur-base) var(--ease-out);
+  animation: pulse-glow 3.5s ease-in-out infinite;
 }
-
-.floating-bot-trigger:hover {
-  transform: scale(1.05) translateY(-3px);
-  box-shadow: 0 15px 40px rgba(13, 148, 136, 0.6);
-}
+.floating-bot-trigger:hover { transform: scale(1.04) translateY(-3px); box-shadow: 0 16px 42px rgba(13,148,136,0.6); }
 
 @keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 20px rgba(20, 184, 166, 0.4); }
-  50% { box-shadow: 0 0 35px rgba(20, 184, 166, 0.8); }
+  0%, 100% { box-shadow: 0 10px 32px rgba(20, 184, 166, 0.35); }
+  50%      { box-shadow: 0 10px 42px rgba(20, 184, 166, 0.68); }
 }
 
 .bot-modal-container {
   position: fixed;
-  bottom: 6rem;
-  right: 2rem;
+  bottom: 6rem; right: 1.75rem;
   width: 380px;
-  max-width: calc(100vw - 4rem);
+  max-width: calc(100vw - 2rem);
   z-index: 101;
   border-radius: var(--radius-md);
   overflow: hidden;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+  box-shadow: var(--shadow-xl);
+  animation: slide-up var(--dur-base) var(--ease-out);
 }
 
-/* Confirmation Modal Backdrop */
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ==========================================================================
+   MODALS
+   ========================================================================== */
+
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.75);
-  backdrop-filter: blur(8px);
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   z-index: 200;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 1.5rem;
+  padding: 1.25rem;
+  animation: fade-in var(--dur-fast) var(--ease-out);
 }
 
 .modal-content {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-glass);
-  border-radius: var(--radius-md);
-  padding: 2rem;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  padding: 1.9rem;
   max-width: 480px;
   width: 100%;
-  box-shadow: var(--shadow-glass);
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow-xl);
+  animation: modal-in var(--dur-base) var(--ease-spring);
+}
+
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes modal-in {
+  from { opacity: 0; transform: scale(0.95) translateY(12px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* VR viewer info panel: floating card on desktop, bottom sheet on mobile so
+   it stops covering the entire 360 experience on a phone. */
+.vr-panel {
+  position: absolute;
+  bottom: 1.75rem; left: 1.75rem;
+  z-index: 310;
+  background: rgba(10, 12, 20, 0.82);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  padding: 1.6rem;
+  max-width: 420px;
+  max-height: 62vh;
+  overflow-y: auto;
+  color: white;
+  box-shadow: var(--shadow-xl);
+}
+
+@media (max-width: 700px) {
+  .vr-panel {
+    left: 0; right: 0; bottom: 0;
+    max-width: none;
+    max-height: 42dvh;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    border-left: none; border-right: none; border-bottom: none;
+    padding: 1.15rem 1.15rem 1.75rem;
+  }
+}
+
+/* ==========================================================================
+   LOADING
+   ========================================================================== */
+
+.spin { animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.skeleton-pulse {
+  animation: shimmer 1.6s infinite linear;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.035) 25%,
+    rgba(255, 255, 255, 0.085) 50%,
+    rgba(255, 255, 255, 0.035) 75%
+  );
+  background-size: 200% 100%;
+  border-radius: var(--radius-xs);
+}
+
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.skeleton-card { padding: 1.15rem; display: flex; gap: 1.25rem; align-items: center; }
+.skeleton-img { width: 168px; height: 128px; border-radius: var(--radius-sm); flex-shrink: 0; }
+.skeleton-text { height: 0.9rem; margin-bottom: 0.55rem; border-radius: var(--radius-xs); }
+.skeleton-title { width: 58%; height: 1.15rem; }
+.skeleton-subtitle { width: 38%; }
+.skeleton-button { width: 118px; height: 38px; border-radius: var(--radius-full); }
+
+/* Progress bar for AI generation */
+.progress-track {
+  width: 100%; max-width: 420px;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: var(--accent-gradient);
+  border-radius: var(--radius-full);
+  transition: width var(--dur-slow) var(--ease-out);
+}
+
+/* Entry animation for lists. Staggered via inline animation-delay. */
+.fade-in-up { animation: fade-in-up var(--dur-slow) var(--ease-out) both; }
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ==========================================================================
+   STATES
+   ========================================================================== */
+
+.state-panel {
+  text-align: center;
+  padding: 3.25rem 2rem;
+  border-radius: var(--radius-md);
+}
+.state-icon {
+  width: 62px; height: 62px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 1.15rem;
+}
+.state-icon--neutral { background: var(--accent-primary-soft); border: 1px solid rgba(99,102,241,0.3); }
+.state-icon--error   { background: var(--danger-soft);  border: 1px solid rgba(251,113,133,0.3); }
+.state-icon--warn    { background: var(--warning-soft); border: 1px solid rgba(251,191,36,0.3); }
+.state-title { font-size: 1.3rem; color: white; margin-bottom: 0.55rem; }
+.state-body  { color: var(--text-secondary); max-width: 460px; margin: 0 auto 1.5rem; line-height: 1.6; font-size: 0.92rem; }
+
+/* ==========================================================================
+   MAP
+   ========================================================================== */
+
+.map-shell {
+  height: 460px;
+  width: 100%;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--border-glass);
+  box-shadow: var(--shadow-md);
+}
+
+/* Leaflet popups default to white; match them to the dark theme. */
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+  background: var(--bg-elevated) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border-strong);
+  box-shadow: var(--shadow-lg) !important;
+}
+.leaflet-popup-content-wrapper { border-radius: var(--radius-sm) !important; }
+.leaflet-container { background: var(--bg-secondary) !important; font-family: 'Inter', sans-serif !important; }
+.leaflet-control-attribution {
+  background: rgba(7,8,13,0.8) !important;
+  color: var(--text-muted) !important;
+}
+.leaflet-control-attribution a { color: var(--text-secondary) !important; }
+.leaflet-bar a {
+  background: var(--bg-elevated) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-glass) !important;
+}
+
+/* ==========================================================================
+   TIMELINE (AI itinerary)
+   ========================================================================== */
+
+.day-card { padding: 1.4rem; border-radius: var(--radius-md); }
+
+.day-head {
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 0.75rem; flex-wrap: wrap;
+  border-bottom: 1px solid var(--border-glass);
+  padding-bottom: 0.85rem; margin-bottom: 1.15rem;
+}
+
+.timeline-row { display: flex; gap: 1rem; align-items: flex-start; }
+
+.timeline-time {
+  min-width: 62px; text-align: right; padding-top: 10px;
+  flex-shrink: 0;
+}
+
+.timeline-card {
+  background: rgba(0, 0, 0, 0.26);
+  padding: 0.95rem;
+  border-radius: var(--radius-sm);
+  flex: 1;
+  min-width: 0;
+  border: 1px solid var(--border-glass);
+  display: flex; gap: 0.95rem;
+  transition: border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
+}
+.timeline-card:hover { border-color: var(--border-strong); background: rgba(0,0,0,0.35); }
+
+.timeline-why {
+  font-size: 0.78rem;
+  color: #a5b4fc;
+  font-style: italic;
+  border-left: 2px solid var(--accent-primary);
+  padding-left: 0.6rem;
+  margin: 0.15rem 0 0.5rem;
+}
+
+.timeline-connector {
+  display: flex; align-items: center; gap: 0.45rem;
+  margin: 0 0 0.7rem 78px;
+  font-size: 0.73rem; color: var(--text-muted);
+}
+
+/* ==========================================================================
+   RESPONSIVE
+   Previously only two breakpoints (900 / 650). The header, search grid,
+   cards, modals and map all needed their own treatment.
+   ========================================================================== */
+
+@media (max-width: 1024px) {
+  .main-layout { grid-template-columns: 240px 1fr; gap: 1.25rem; }
+}
+
+@media (max-width: 900px) {
+  .main-layout { grid-template-columns: 1fr; }
+  .filters-sidebar { position: static; max-height: none; }
+  .hero { padding: 2.5rem 1rem 1.5rem; }
+}
+
+@media (max-width: 700px) {
+  .app-container { padding: 1rem 1rem 5rem; }
+
+  .listing-card { flex-direction: column; align-items: stretch; gap: 0.9rem; }
+  .card-media { width: 100%; height: 180px; }
+  .card-aside {
+    min-width: 0;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    border-top: 1px solid var(--border-glass-light);
+    padding-top: 0.85rem;
+  }
+
+  .flight-route { justify-content: space-between; width: 100%; }
+  .flight-line { width: 46px; }
+
+  .search-widget-panel { padding: 1.5rem 1.1rem 1.25rem; }
+  .search-inputs-grid { grid-template-columns: 1fr 1fr; }
+
+  .hero-stats { gap: 1.5rem; }
+  .timeline-connector { margin-left: 0; }
+  .timeline-time { min-width: 52px; }
+  .map-shell { height: 340px; }
+  .modal-content { padding: 1.4rem; }
+}
+
+@media (max-width: 480px) {
+  .header { padding: 0.7rem 0; }
+  .brand-name { font-size: 1.3rem; }
+  /* The currency chip is the first thing to go on a narrow header. */
+  .header-actions .header-chip--currency { display: none; }
+  .search-inputs-grid { grid-template-columns: 1fr; }
+  .service-tab { padding: 0.6rem 1rem; font-size: 0.85rem; }
+  .floating-bot-trigger { padding: 0.75rem 1.1rem; font-size: 0.85rem; bottom: 1rem; right: 1rem; }
+  .floating-bot-trigger .bot-label { display: none; }
+  .bot-modal-container { right: 1rem; bottom: 4.75rem; }
+  .hero-stats { gap: 1.1rem; }
+  .hero-stat-value { font-size: 1.3rem; }
+}
+
+/* Touch targets: WCAG asks for 44x44 minimum. */
+@media (pointer: coarse) {
+  .btn-icon { width: 44px; height: 44px; }
+  .chip { padding: 0.5rem 0.95rem; }
+  .filter-checkbox { padding: 0.45rem 0; }
+}
+
+/* ============================================================================
+   AUTHENTICATION — sign-in modal and the account menu
+   ============================================================================
+   Reuses the existing .modal-backdrop, tokens and focus-visible rules so this
+   reads as part of the app rather than a bolted-on login screen.
+   ========================================================================= */
+
+.auth-modal {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xl);
+  padding: 2rem 1.75rem 1.5rem;
+  /* Same entrance as .modal-content — every dialog should feel identical. */
+  animation: modal-in var(--dur-base) var(--ease-spring);
+}
+
+.auth-modal__close {
+  position: absolute;
+  top: 0.9rem;
+  right: 0.9rem;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+}
+.auth-modal__close:hover { background: rgba(255,255,255,0.07); color: var(--text-primary); }
+
+.auth-modal__title {
+  font-size: 1.35rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.35rem;
+}
+
+.auth-modal__subtitle {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  margin-bottom: 1.5rem;
+}
+
+/* --- fields --------------------------------------------------------------- */
+
+.auth-field { margin-bottom: 1rem; }
+
+.auth-field > label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 0.4rem;
+  letter-spacing: 0.01em;
+}
+
+.auth-field__input {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0 0.85rem;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  transition: border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
+}
+
+/* Focus lives on the wrapper, because the visible box is the wrapper — putting
+   it on the bare input would draw a ring inside the border. */
+.auth-field__input:focus-within {
+  border-color: var(--accent-primary);
+  background: rgba(255,255,255,0.06);
+  box-shadow: 0 0 0 3px var(--accent-primary-soft);
+}
+
+.auth-field__input--error { border-color: var(--danger); }
+.auth-field__input--error:focus-within {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 3px var(--danger-soft);
+}
+
+.auth-field__input input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.7rem 0;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 0.92rem;
+  font-family: inherit;
+}
+.auth-field__input input:focus { outline: none; }
+.auth-field__input input::placeholder { color: var(--text-muted); }
+
+.auth-field__error,
+.auth-field__hint {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.76rem;
+  line-height: 1.4;
+}
+.auth-field__error { color: var(--danger); }
+.auth-field__hint { color: var(--text-muted); }
+
+/* --- submit and errors ---------------------------------------------------- */
+
+.auth-modal__error {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin: 0.25rem 0 1rem;
+  padding: 0.7rem 0.8rem;
+  background: var(--danger-soft);
+  border: 1px solid rgba(251, 113, 133, 0.3);
+  border-radius: var(--radius-sm);
+  color: var(--danger);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+.auth-modal__error svg { flex-shrink: 0; margin-top: 1px; }
+
+.auth-modal__submit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.8rem 1rem;
+  margin-top: 0.35rem;
+  background: var(--accent-gradient);
+  border: none;
+  border-radius: var(--radius-sm);
+  color: #fff;
+  font-size: 0.92rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: filter var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
+}
+.auth-modal__submit:hover:not(:disabled) { filter: brightness(1.1); }
+.auth-modal__submit:active:not(:disabled) { transform: translateY(1px); }
+.auth-modal__submit:disabled { opacity: 0.65; cursor: not-allowed; }
+
+.auth-modal__switch {
+  margin-top: 1.1rem;
+  text-align: center;
+  font-size: 0.84rem;
+  color: var(--text-secondary);
+}
+.auth-modal__switch button {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-weight: 600;
+  color: var(--accent-primary);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.auth-modal__switch button:hover { color: var(--accent-secondary); }
+
+/* --- header account control ----------------------------------------------- */
+
+.header-chip--signin { color: var(--text-primary); }
+
+/* Holds the header's width steady while /me resolves, so the nav doesn't
+   visibly jump when the account chip appears. */
+.header-chip--ghost {
+  width: 92px;
+  background: transparent;
+  border-color: transparent;
+  pointer-events: none;
+}
+
+.account-menu { position: relative; }
+
+.account-menu__trigger { cursor: pointer; }
+
+.account-avatar {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-full);
+  background: var(--accent-gradient);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.account-menu__name {
+  max-width: 110px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-menu__panel {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  min-width: 216px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  padding: 0.4rem;
+  z-index: 120;
+  animation: fade-in var(--dur-fast) var(--ease-out);
+}
+
+.account-menu__header {
+  padding: 0.6rem 0.7rem 0.7rem;
+  border-bottom: 1px solid var(--border-glass-light);
+  margin-bottom: 0.35rem;
+}
+.account-menu__header strong { display: block; font-size: 0.87rem; }
+.account-menu__header span {
+  display: block;
+  font-size: 0.76rem;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-menu__panel a,
+.account-menu__panel button {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  width: 100%;
+  padding: 0.55rem 0.7rem;
+  border: none;
+  border-radius: var(--radius-xs);
+  background: none;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 0.86rem;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+}
+.account-menu__panel a:hover,
+.account-menu__panel button:hover {
+  background: rgba(255,255,255,0.06);
+  color: var(--text-primary);
+}
+
+@media (max-width: 640px) {
+  .account-menu__name { display: none; }
+  .auth-modal { padding: 1.75rem 1.25rem 1.25rem; }
 }
