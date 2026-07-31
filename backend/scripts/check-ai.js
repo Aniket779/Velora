@@ -56,23 +56,22 @@ async function checkGemini(key, model) {
   // ---------------------------------------------------------------- 1. shape
   head('1. Key format');
 
-  const looksLikeStudioKey = /^AIza[A-Za-z0-9_-]{35}$/.test(key);
   info(`length ${key.length}, starts with "${key.slice(0, 4)}"`);
 
-  if (looksLikeStudioKey) {
-    ok('Looks like a Google AI Studio API key (AIza…, 39 chars)');
-  } else if (key.startsWith('AQ.') || key.startsWith('ya29.')) {
-    bad('This is an OAuth access token, NOT a Generative Language API key');
-    info('Tokens starting with "AQ." or "ya29." come from Google sign-in flows');
-    info('(Antigravity, Gemini Code Assist, gcloud). They authenticate against a');
-    info('different service and will never work with generativelanguage.googleapis.com.');
-    info('');
-    info('Get the right one, free, in about 60 seconds:');
-    info('  https://aistudio.google.com/apikey  ->  Create API key');
-    info('It will start with "AIza" and be 39 characters long.');
+  // AI Studio has issued at least two formats: AIza… (older, 39 chars) and
+  // AQ.… (current). Both are valid, so this check stays deliberately narrow —
+  // an earlier, stricter version confidently rejected a perfectly good key.
+  // Step 2 asks Google, which is the only answer that actually counts.
+  if (/^ya29\./.test(key)) {
+    bad('This is a short-lived OAuth ACCESS TOKEN (ya29.…), not an API key');
+    info('These come from gcloud or a Google sign-in flow, expire in ~1 hour,');
+    info('and are scoped to a user rather than a project.');
+    info('Get an API key at https://aistudio.google.com/apikey');
+  } else if (key.length < 30) {
+    bad(`Only ${key.length} characters — almost certainly a truncated paste`);
   } else {
-    warn('Unrecognised key format — expected AIza… and 39 characters');
-    info('Continuing anyway, in case Google has changed the format.');
+    ok('Nothing obviously wrong with the key format');
+    info('Format alone proves nothing — step 2 is the real test.');
   }
 
   // ------------------------------------------------------- 2. authentication

@@ -128,32 +128,36 @@ class LlmClient {
   }
 
   /**
-   * Catches the wrong KIND of credential at boot.
+   * Catches only credentials that are UNAMBIGUOUSLY unusable.
    *
-   * Google issues several token formats and they are not interchangeable.
-   * A `ya29.`/`AQ.` OAuth token from a sign-in flow (Antigravity, Code Assist,
-   * gcloud) authenticates against a different service entirely — paste one here
-   * and the failure arrives much later, as a confusing error on the first
-   * generation, long after you've stopped thinking about the key.
+   * Deliberately permissive, because a stricter version of this check was
+   * wrong: it rejected `AQ.`-prefixed keys as OAuth tokens, when AI Studio
+   * currently issues API keys in exactly that format. `AIza…` is the older
+   * format and both are valid.
    *
-   * A warning, not a hard failure: Google may change formats, and being wrong
-   * about that shouldn't stop the server booting.
+   * The lesson generalises — a provider's key format is theirs to change, so
+   * pattern-matching on it will eventually produce a confident, incorrect
+   * error message pointing at the wrong problem. The only authority on whether
+   * a key works is the provider: `npm run check-ai` asks it directly.
+   *
+   * So this flags just two things that cannot be a working key under any
+   * format: an accidental OAuth access token, and a truncated paste.
    */
   _warnIfKeyLooksWrong() {
     if (this.provider !== 'gemini') return;
 
-    if (/^(AQ\.|ya29\.)/.test(this.geminiKey)) {
+    // `ya29.` is specifically a Google OAuth2 ACCESS TOKEN (gcloud, sign-in
+    // flows). It is short-lived and scoped to a user, never a service API key.
+    if (/^ya29\./.test(this.geminiKey)) {
       console.warn(
-        '\n[AI] ⚠️  GEMINI_API_KEY looks like an OAuth token, not an API key.\n' +
-          '     Keys starting with "AQ." or "ya29." come from Google sign-in flows and\n' +
-          '     will NOT work with the Generative Language API.\n' +
-          '     Get a free one at https://aistudio.google.com/apikey — it starts with "AIza".\n' +
+        '\n[AI] ⚠️  GEMINI_API_KEY looks like a short-lived OAuth access token (ya29.…),\n' +
+          '     not an API key. Get one at https://aistudio.google.com/apikey\n' +
           '     Diagnose with: npm run check-ai\n'
       );
-    } else if (!/^AIza[A-Za-z0-9_-]{35}$/.test(this.geminiKey)) {
+    } else if (this.geminiKey.length < 30) {
       console.warn(
-        `[AI] ⚠️  GEMINI_API_KEY has an unexpected format (${this.geminiKey.length} chars, ` +
-          `expected 39 starting with "AIza"). Run: npm run check-ai`
+        `[AI] ⚠️  GEMINI_API_KEY is only ${this.geminiKey.length} characters — likely a ` +
+          `truncated paste. Run: npm run check-ai`
       );
     }
   }
