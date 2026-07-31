@@ -20,3 +20,19 @@ build
 *.log
 npm-debug.log*
 coverage
+
+# Personal working notes — kept locally, not published.
+# INTERVIEW_PREP.md and RESUME_BULLETS.md especially: prepared answers and CV
+# copy read strangely to anyone browsing the repo. ENGINEERING_REVIEW.md is a
+# critique of this codebase and belongs in your notes, not on its front page.
+# README.md, ARCHITECTURE.md and DEPLOYMENT.md stay tracked.
+AI_UPGRADE_CHANGELOG.md
+AUTH_CHANGELOG.md
+ENGINEERING_REVIEW.md
+FEATURES.md
+FRONTEND_UPGRADE.md
+IMPLEMENTATION_ROADMAP.md
+INTERVIEW_PREP.md
+MILESTONE_1_CHANGELOG.md
+NEXT_STEPS.md
+RESUME_BULLETS.md
