@@ -1,7 +1,22 @@
+# Dependencies
 node_modules
+
+# Build output
 dist
 build
+.vercel
+
+# Environment — real secrets. .env.example IS committed on purpose.
 .env
+.env.local
+.env.*.local
+
+# Editors / OS
 .DS_Store
-coverage
+.idea
+.vscode
+
+# Logs and coverage
 *.log
+npm-debug.log*
+coverage

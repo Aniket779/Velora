@@ -1,0 +1,59 @@
+# =============================================================================
+# Render Blueprint — Velora API
+# =============================================================================
+# Optional. You can create the service by hand in the dashboard instead; this
+# file just makes it reproducible. Render reads it from the repo root.
+#
+# The worker deliberately runs INSIDE this service rather than as a separate
+# one. On the free tier two services would both sleep independently, and the
+# queue would stall while the worker was asleep. Splitting them is the right
+# call under real load — see IMPLEMENTATION_ROADMAP.md M10 — but it's the wrong
+# call for a free-tier demo.
+# =============================================================================
+
+services:
+  - type: web
+    name: velora-api
+    runtime: node
+    plan: free
+    region: singapore # closest to India; change if your users are elsewhere
+    rootDir: backend
+    buildCommand: npm ci
+    startCommand: npm start
+
+    # Render restarts the service if this stops returning 2xx. Our /health
+    # reports 503 when Mongo is unreachable, so a database outage is visible
+    # rather than hidden behind a server that answers "ok".
+    healthCheckPath: /health
+
+    envVars:
+      - key: NODE_ENV
+        value: production
+
+      # sync: false means "prompt me for this in the dashboard" — Render will
+      # never store these in git.
+      - key: MONGO_URI
+        sync: false
+      - key: REDIS_HOST
+        sync: false
+      - key: REDIS_PORT
+        sync: false
+      - key: REDIS_PASSWORD
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+
+      # Set this to your Vercel URL once the frontend is deployed.
+      - key: CLIENT_URL
+        sync: false
+
+      # Render generates a strong random value and keeps it stable across
+      # deploys. Do not paste your local secret here — production should have
+      # its own, so a leaked dev secret cannot forge production tokens.
+      - key: JWT_SECRET
+        generateValue: true
+
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: GEMINI_MODEL
+        value: gemini-2.0-flash

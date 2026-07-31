@@ -1,14 +1,55 @@
 const mongoose = require('mongoose');
 
+/**
+ * ============================================================================
+ * MONGODB CONNECTION
+ * ============================================================================
+ * Exits the process on failure rather than limping on. A server that accepts
+ * requests without a database returns 500s that look like application bugs;
+ * exiting makes the real cause obvious, and Render restarts the container.
+ * ============================================================================
+ */
 const connectDB = async () => {
-    try {
-        const mongoUri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/Velora';
-        await mongoose.connect(mongoUri);
-        console.log('MongoDB connected');
-    } catch (error) {
-        console.error('MongoDB connection error:', error.message);
-        process.exit(1);
+  const mongoUri =
+    process.env.MONGO_URI || process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/Velora';
+
+  try {
+    await mongoose.connect(mongoUri, {
+      // Default is 30s. Ten is long enough for a cold Atlas cluster and short
+      // enough that a misconfiguration surfaces while you're still watching
+      // the deploy log.
+      serverSelectionTimeoutMS: 10_000,
+    });
+
+    // Never log the URI itself — it contains the password.
+    console.log(`[DB] Connected to ${mongoose.connection.name}`);
+  } catch (error) {
+    console.error(`[DB] Connection failed: ${error.message}`);
+
+    // By far the most common deployment failure, and the driver's own message
+    // ("Could not connect to any servers...") doesn't say what to do about it.
+    if (/ENOTFOUND|querySrv|timed out|ServerSelection/i.test(error.message)) {
+      console.error(
+        '\n[DB] This is usually one of three things:\n' +
+          '  1. Atlas IP allowlist — Render uses dynamic IPs, so Network Access\n' +
+          '     must include 0.0.0.0/0. This is the cause ~80% of the time.\n' +
+          '  2. A special character in the password that needs URL-encoding\n' +
+          '     (@ becomes %40, # becomes %23, and so on).\n' +
+          '  3. MONGO_URI missing the database name before the "?" — it should\n' +
+          '     look like ...mongodb.net/Velora?retryWrites=true\n'
+      );
     }
+    process.exit(1);
+  }
+
+  // A connection that drops AFTER startup doesn't re-enter the catch above.
+  // Without this listener the failure is silent and every query just hangs.
+  mongoose.connection.on('error', (err) => {
+    console.error(`[DB] Connection error after startup: ${err.message}`);
+  });
+  mongoose.connection.on('disconnected', () => {
+    console.warn('[DB] Disconnected — the driver will attempt to reconnect');
+  });
 };
 
 module.exports = connectDB;
