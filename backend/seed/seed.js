@@ -177,6 +177,11 @@ const run = async () => {
   // Everything past this point needs the database.
   const { mongoose, Hotel, Restaurant, TouristPlace, Flight, Destination } = loadDb();
 
+  // Must run BEFORE connect: mongodb+srv:// resolves an SRV record first, and
+  // that lookup is what fails on machines whose only nameserver is an IPv6
+  // link-local address Node cannot reach.
+  require('../src/config/dns')();
+
   const uri = process.env.MONGO_URI || process.env.MONGODB_URI ||
     'mongodb://127.0.0.1:27017/Velora';
   console.log(`Connecting to ${uri.replace(/\/\/[^@]*@/, '//***@')} ...`);

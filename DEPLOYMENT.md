@@ -72,13 +72,20 @@ npm run sync-indexes    # creates the indexes, including users.email
 Doing this locally rather than on Render means you can watch it and you aren't
 burning free-tier build minutes.
 
-> **If you see `querySrv ECONNREFUSED`** — that's DNS, not Atlas. `mongodb+srv://`
-> resolves an SRV record before connecting at all, and many consumer ISP
-> resolvers handle those badly, so nothing ever reaches MongoDB. Go back to
-> **Connect → Drivers** and switch **Version** to **`2.2.12 or later`**: Atlas
-> then gives you a `mongodb://` string with the hosts written out, needing no
-> SRV lookup. Keep `/Velora` in it. Render's own DNS is fine, so this only
-> affects seeding from your machine.
+> **If you see `querySrv ECONNREFUSED`** — DNS on your machine, not Atlas.
+> Don't go looking at the IP allowlist.
+>
+> `mongodb+srv://` resolves an SRV record before it connects. Node does that
+> lookup itself rather than deferring to the OS, so `nslookup` can succeed
+> while Node fails on the same network. The usual cause is the machine having
+> only an IPv6 link-local nameserver (`fe80::...`) — `nslookup` handles the
+> interface scope those require, Node generally can't.
+>
+> Fix: add `DNS_SERVERS=8.8.8.8,1.1.1.1` to `backend/.env`. Alternatively use
+> **Connect → Drivers → Version `2.2.12 or later`** for a `mongodb://` string
+> with the hosts written out, which skips the SRV lookup entirely.
+>
+> Render's DNS is fine, so this only ever affects seeding from your machine.
 
 ---
 
@@ -229,7 +236,7 @@ Open your Vercel URL and walk the whole path:
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| `querySrv ECONNREFUSED` when seeding | **DNS**, not Atlas — your resolver can't do SRV lookups | Atlas → Connect → Drivers → Version **`2.2.12 or later`** for a non-SRV `mongodb://` string. Or set DNS to `8.8.8.8` |
+| `querySrv ECONNREFUSED` when seeding | **DNS on your machine** — Node can't reach the nameserver, often an IPv6 link-local one. `nslookup` working proves nothing | `DNS_SERVERS=8.8.8.8,1.1.1.1` in `backend/.env` |
 | `db: disconnected` on /health | Atlas IP allowlist | Network Access → `0.0.0.0/0` |
 | Page loads, every request fails | `CLIENT_URL` not updated | Step 4 |
 | Deep links 404 on refresh | `vercel.json` not applied | Root Directory must be `frontend` |

@@ -22,20 +22,27 @@ const explainConnectionError = (message = '') => {
   //    the password here is wasted time.
   if (/querySrv|ECONNREFUSED\s+_mongodb|queryTxt|EAI_AGAIN/i.test(message)) {
     return (
-      'This is a DNS problem, not an Atlas problem. The SRV lookup that\n' +
-      'mongodb+srv:// depends on failed, so nothing reached MongoDB.\n' +
+      'This is a DNS problem on THIS MACHINE, not an Atlas problem. Nothing\n' +
+      'reached MongoDB — mongodb+srv:// resolves an SRV record before it\n' +
+      'connects, and that lookup failed.\n' +
       '\n' +
-      'Confirm it:\n' +
-      '  nslookup -type=SRV _mongodb._tcp.<your-cluster>.mongodb.net\n' +
-      '  nslookup -type=SRV _mongodb._tcp.<your-cluster>.mongodb.net 8.8.8.8\n' +
-      'If only the second returns records, your ISP resolver is the cause.\n' +
-      'Consumer ISPs handle SRV queries badly more often than you would think.\n' +
+      'Do NOT go and check the Atlas IP allowlist. Check whether Node can\n' +
+      'resolve at all, which is a different question from whether nslookup can:\n' +
       '\n' +
-      'Two fixes:\n' +
-      '  A. Atlas -> Connect -> Drivers -> Version "2.2.12 or later".\n' +
-      '     That gives a mongodb:// string with the hosts written out, which\n' +
-      '     needs no SRV lookup at all. Keep /Velora in it.\n' +
-      '  B. Set your DNS servers to 8.8.8.8 and 1.1.1.1.'
+      '  node -e "require(\'dns\').resolveSrv(\'_mongodb._tcp.<cluster>.mongodb.net\',\n' +
+      '    (e,r)=>console.log(e?e.code:r))"\n' +
+      '\n' +
+      'If nslookup works but that fails, the usual cause is the machine having\n' +
+      'only an IPv6 link-local nameserver (fe80::...). nslookup handles the\n' +
+      'interface scope those need; Node generally cannot, so it is refused.\n' +
+      '\n' +
+      'Three fixes, cheapest first:\n' +
+      '  A. Put DNS_SERVERS=8.8.8.8,1.1.1.1 in backend/.env. Points Node at a\n' +
+      '     resolver it can reach. Local only; never needed on a deployed host.\n' +
+      '  B. Atlas -> Connect -> Drivers -> Version "2.2.12 or later" for a\n' +
+      '     mongodb:// string with hosts written out — no SRV lookup at all.\n' +
+      '     Keep /Velora in it.\n' +
+      '  C. Set your OS DNS servers to 8.8.8.8 and 1.1.1.1.'
     );
   }
 

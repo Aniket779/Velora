@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const { printConnectionHelp } = require('./dbErrors');
+const configureDns = require('./dns');
 
 /**
  * ============================================================================
@@ -11,6 +12,11 @@ const { printConnectionHelp } = require('./dbErrors');
  * ============================================================================
  */
 const connectDB = async () => {
+  // Before connecting: mongodb+srv:// does an SRV lookup first, so a resolver
+  // Node can't reach fails the connection before it starts. No-op unless
+  // DNS_SERVERS is set, and it never needs to be on a deployed host.
+  configureDns();
+
   const mongoUri =
     process.env.MONGO_URI || process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/Velora';
 

@@ -53,6 +53,7 @@ const run = async () => {
   console.log('==================================================\n');
   console.log(`Connecting to ${uri.replace(/\/\/[^@]*@/, '//***@')} ...`);
 
+  require('../src/config/dns')();
   await mongoose.connect(uri, { serverSelectionTimeoutMS: 10000 });
   console.log('  connected\n');
 
