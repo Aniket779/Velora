@@ -1,5 +1,11 @@
 # Velora — AI Travel Planner
+## Live Demo
 
+🌐 Frontend:
+https://velora-ten-umber.vercel.app
+
+⚙️ Backend API:
+https://velora-backend-80tm.onrender.com
 An AI travel planner that builds day-by-day itineraries from **real inventory in a database**, not invented places.
 
 Most AI travel apps forward a prompt to an LLM and get back plausible-sounding hotels that don't exist. Velora queries MongoDB first, puts the real hotels and restaurants **into** the prompt, and then verifies the AI actually used them — rejecting the plan if it invents anything.
