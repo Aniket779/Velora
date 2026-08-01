@@ -90,15 +90,64 @@ app.set('trust proxy', 1);
 app.use(attachIdentity);
 
 /**
- * Health check.
+ * ============================================================================
+ * SERVICE INDEX AND HEALTH CHECKS
+ * ============================================================================
+ * Three endpoints, because "is it up?" has two different answers and callers
+ * need different ones:
  *
- * Render polls this to decide whether the deploy succeeded, and a free-tier
- * keep-alive cron hits it every 10 minutes so the instance never sleeps.
+ *   GET /             what is this? Stops the base URL 404ing.
+ *   GET /health/live  LIVENESS  — is the process running? Never fails.
+ *   GET /health       READINESS — can it actually serve? 503 if Mongo is down.
  *
- * It reports Mongo's real connection state rather than a bare `ok`. A server
- * that answers "ok" while its database is unreachable is worse than one that
- * fails outright — the deploy goes green and the errors surface as broken
- * pages for users instead.
+ * The liveness/readiness split matters. /health returns 503 when the database
+ * is unreachable, which is correct for Render — a deploy that goes green while
+ * Mongo is down just turns into broken pages for users. But it's wrong for an
+ * uptime monitor: a 30-second Atlas blip would alert you that the service is
+ * DOWN when the process is fine and recovering on its own.
+ *
+ * So monitors watch /health/live, and orchestrators watch /health.
+ * ============================================================================
+ */
+
+/**
+ * API index. An API root that 404s tells anyone who finds it — a monitor, a
+ * recruiter, you in six months — nothing at all.
+ */
+app.get('/', (req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    service: 'Velora Backend',
+    version: process.env.npm_package_version || '1.0.0',
+    docs: 'https://github.com/Aniket779/Velora',
+    health: '/health',
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString(),
+  });
+});
+
+/**
+ * LIVENESS. Point uptime monitors here.
+ *
+ * Deliberately touches nothing external. If Express can run this handler the
+ * process is alive, which is the only question being asked — so it cannot
+ * report DOWN for a reason the process could recover from by itself.
+ */
+app.get('/health/live', (req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    service: 'Velora Backend',
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString(),
+  });
+});
+
+/**
+ * READINESS. Render's health check points here.
+ *
+ * Reports Mongo's real connection state rather than a bare `ok`. A server that
+ * answers "ok" while its database is unreachable is worse than one that fails
+ * outright — the deploy goes green and the errors surface as broken pages.
  */
 app.get('/health', (req, res) => {
   const dbReady = mongoose.connection.readyState === 1; // 1 = connected

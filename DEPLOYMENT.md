@@ -211,12 +211,25 @@ alarming than it is.
 Render's free tier sleeps after 15 minutes idle. The next visitor waits ~50
 seconds, and a recruiter will usually close the tab first.
 
-1. [cron-job.org](https://cron-job.org) → free account → **Create cronjob**
-2. URL: `https://your-service.onrender.com/health`
+1. [cron-job.org](https://cron-job.org) or UptimeRobot → free account
+2. URL: `https://your-service.onrender.com/health/live`
 3. Schedule: **every 10 minutes**
 4. Save and enable.
 
 Ten minutes, not fifteen — you want the ping comfortably inside the window.
+
+**Point monitors at `/health/live`, not `/health` or `/`.** The service exposes
+three endpoints and they answer different questions:
+
+| Endpoint | Answers | Fails when | Use it for |
+|---|---|---|---|
+| `/` | what is this service? | never | humans, curiosity |
+| `/health/live` | is the process alive? | never (200 while responding) | **uptime monitors** |
+| `/health` | can it serve traffic? | 503 if Mongo is down | **Render health check** |
+
+A monitor pointed at `/health` will report DOWN during a 30-second Atlas blip,
+even though the process is fine and recovering by itself. A monitor pointed at
+`/` used to report DOWN permanently, because the root route 404'd.
 
 > Render's free tier also caps total monthly runtime. A keep-alive ping consumes
 > those hours continuously, so the service may exhaust its allowance near the end
