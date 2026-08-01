@@ -146,7 +146,16 @@ burning free-tier build minutes.
    # {"status":"ok","db":"connected","ai":"gemini",...}
    ```
 
-   If `db` says `disconnected`, go back to Atlas Network Access.
+   **On Windows PowerShell**, `curl` is an alias for `Invoke-WebRequest` and
+   will warn about script execution. Use one of these instead:
+
+   ```powershell
+   curl.exe https://your-service.onrender.com/health   # the real curl binary
+   irm https://your-service.onrender.com/health        # native, parses the JSON
+   ```
+
+   If `db` says `disconnected`, go back to Atlas Network Access. The first
+   request can take ~50s if the free instance has gone to sleep.
 
 ---
 
