@@ -235,10 +235,38 @@ const IMAGES = {
 const unsplash = (id, w = 800) =>
   `https://images.unsplash.com/${id}?auto=format&fit=crop&w=${w}&q=80`;
 
+/**
+ * Every photo a destination is allowed to use, drawn from ALL of its tags.
+ *
+ * The old code used `IMAGES[primaryTag][0]` — the first photo of the first
+ * tag — so all 67 destinations tagged `metro` got byte-identical images. Six
+ * metros in the recommendations panel meant six copies of the same photo.
+ *
+ * Unioning the tags widens the pool meaningfully because most destinations
+ * carry more than one: Delhi is [metro, unesco], Goa is [beach, metro]. That
+ * turns a 3-photo pool into 6-8 and, more importantly, means two cities with
+ * the same primary tag rarely land on the same picture.
+ *
+ * `generic` is appended as a floor so an unrecognised tag still gets variety
+ * rather than falling back to a single image.
+ */
+const imagesForTags = (tags = []) => {
+  const pool = [];
+  for (const tag of tags) {
+    for (const id of IMAGES[tag] || []) {
+      if (!pool.includes(id)) pool.push(id);
+    }
+  }
+  for (const id of IMAGES.generic) {
+    if (!pool.includes(id)) pool.push(id);
+  }
+  return pool;
+};
+
 module.exports = {
   HOTEL_PREFIX, HOTEL_SUFFIX, HOTEL_BRAND_STYLE, AMENITIES,
   RESTAURANT_PATTERN, RESTAURANT_WORDS, RESTAURANT_SUFFIX, OPENING_HOURS,
   CUISINE_BY_INDIAN_STATE, CUISINE_BY_COUNTRY, SECONDARY_CUISINES,
   GENERIC_SIGHTS, VISIT_TIME, DURATIONS,
-  AIRLINES, IMAGES, unsplash,
+  AIRLINES, IMAGES, unsplash, imagesForTags,
 };

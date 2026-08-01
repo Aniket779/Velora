@@ -38,6 +38,15 @@ const destinationSchema = new mongoose.Schema(
     famousPlaces: [{ name: String, description: String }],
     localTransport: [{ type: String }],
 
+    /** Card thumbnail (16:9-ish). Distinct from the 360° panorama below. */
+    imageUrl: { type: String },
+
+    /**
+     * Equirectangular 360° panorama for the VR viewer.
+     * NOT interchangeable with imageUrl — a panorama looks stretched and
+     * warped when rendered into a card, which is what the recommendations
+     * panel was doing before imageUrl existed.
+     */
     vrImageUrl: { type: String },
   },
   { timestamps: true }

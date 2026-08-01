@@ -419,21 +419,37 @@ class DiscoverService {
     const query = { citySlug: { $nin: [...seenSlugs] } };
     if (preferredTags.length) query.tags = { $in: preferredTags };
 
-    let items = await Destination.find(query).limit(limit * 2).lean();
+    /**
+     * $sample, not find().limit().
+     *
+     * find() with no sort returns documents in natural (insertion) order, so
+     * this always handed back the first six seeded destinations — the India
+     * metros — for every user, on every page load, out of 171 available. The
+     * panel looked broken and the personalisation looked fake.
+     *
+     * $sample draws a random subset instead, so the panel actually changes and
+     * the whole catalogue gets surfaced over time. Cheap here: MongoDB uses a
+     * random cursor when the sample is small relative to the collection.
+     */
+    let items = await Destination.aggregate([
+      { $match: query },
+      { $sample: { size: limit * 2 } },
+    ]);
 
     // Widen in stages rather than ever returning an empty panel.
     // 1. Drop the tag filter, keep excluding places they've already seen.
     if (items.length < limit) {
-      const extra = await Destination.find({
-        citySlug: { $nin: [...seenSlugs, ...items.map((i) => i.citySlug)] },
-      }).limit(limit * 2 - items.length).lean();
+      const extra = await Destination.aggregate([
+        { $match: { citySlug: { $nin: [...seenSlugs, ...items.map((i) => i.citySlug)] } } },
+        { $sample: { size: Math.max(1, limit * 2 - items.length) } },
+      ]);
       items = [...items, ...extra];
     }
 
     // 2. Still nothing — the user has seen everything we have. Showing places
     //    they already know beats showing an empty panel.
     if (!items.length) {
-      items = await Destination.find().limit(limit).lean();
+      items = await Destination.aggregate([{ $sample: { size: limit } }]);
     }
 
     return {
@@ -455,7 +471,9 @@ class DiscoverService {
         tags: d.tags,
         priceTier: d.priceTier,
         description: d.description,
-        image: d.vrImageUrl,
+        // imageUrl is the card photo; vrImageUrl is the 360° panorama. The
+        // fallback keeps data seeded before imageUrl existed still rendering.
+        image: d.imageUrl || d.vrImageUrl,
         bestSeason: d.bestSeason,
         latitude: d.latitude,
         longitude: d.longitude,

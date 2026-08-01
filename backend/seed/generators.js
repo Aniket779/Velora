@@ -344,9 +344,35 @@ const generateDestinationDoc = (d) => ({
     description: `${category} attraction in ${d.city}.`,
   })),
   localTransport: d.transport || [],
-  vrImageUrl: P.unsplash(
-    (P.IMAGES[primaryTag(d)] || P.IMAGES.generic)[0], 1600
-  ),
+  /**
+   * Two images, because they are used for two different things.
+   *
+   * The old code set only vrImageUrl, to `IMAGES[primaryTag][0]` — the FIRST
+   * photo of the FIRST tag. Every one of the 67 `metro` destinations therefore
+   * carried a byte-identical URL, and the recommendations panel (six metros)
+   * rendered six copies of the same photograph.
+   *
+   * imageUrl  card thumbnail. Picked per-city from the union of all its tags,
+   *           so neighbouring cards differ.
+   * vrImageUrl the 360° panorama for the VR viewer. Wider crop, and a poor
+   *           card image — an equirectangular panorama looks stretched and
+   *           warped in a 16:9 thumbnail.
+   *
+   * The pick is seeded from the city slug, so it is deterministic: reseeding
+   * gives every city the same photo it had before, and the choice is stable
+   * across environments.
+   */
+  imageUrl: (() => {
+    const pool = P.imagesForTags(d.tags);
+    const rng = makeRng(`img:${slugify(d.city)}`);
+    return P.unsplash(pool[Math.floor(rng() * pool.length)], 800);
+  })(),
+
+  vrImageUrl: (() => {
+    const pool = P.imagesForTags(d.tags);
+    const rng = makeRng(`vr:${slugify(d.city)}`);
+    return P.unsplash(pool[Math.floor(rng() * pool.length)], 1600);
+  })(),
 });
 
 module.exports = {
