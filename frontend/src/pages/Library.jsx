@@ -306,9 +306,19 @@ function FavoritesList() {
               className="listing-card glass-panel glass-panel-hover fade-in-up"
               style={{ animationDelay: `${Math.min(i, 8) * 45}ms` }}
             >
-              {item.snapshot?.image && (
+              {item.snapshot?.image ? (
                 <img className="card-media" src={item.snapshot.image} alt="" loading="lazy" />
-              )}
+              ) : item.refType === 'destination' ? (
+                /* Destinations carry no photo — a stock image keyed to a tag
+                   claimed to depict a city it wasn't. Tinted tile instead. */
+                <div
+                  className={`card-media dest-tile__banner dest-tile__banner--${(item.snapshot?.tags || [])[0] || 'generic'}`}
+                >
+                  <span className="dest-tile__initial" aria-hidden="true">
+                    {item.snapshot?.name?.trim().charAt(0).toUpperCase()}
+                  </span>
+                </div>
+              ) : null}
               <div className="card-body">
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
                   <h4 className="card-title">{item.snapshot?.name}</h4>

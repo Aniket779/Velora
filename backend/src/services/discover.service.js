@@ -471,9 +471,20 @@ class DiscoverService {
         tags: d.tags,
         priceTier: d.priceTier,
         description: d.description,
-        // imageUrl is the card photo; vrImageUrl is the 360° panorama. The
-        // fallback keeps data seeded before imageUrl existed still rendering.
-        image: d.imageUrl || d.vrImageUrl,
+        /**
+         * A REAL landmark, not a stock photo.
+         *
+         * The card used to show a generic Unsplash image chosen by tag, which
+         * meant Delhi was illustrated with the Taj Mahal — a building 200km
+         * away in Agra. Varying the photos made it worse, not better: a
+         * confidently wrong image is harder to forgive than a repeated one,
+         * and it's precisely the failure mode the itinerary grounding exists
+         * to prevent.
+         *
+         * famousPlaces is curated per city in the seed data, so this is a
+         * fact about the destination rather than decoration that implies one.
+         */
+        topSight: d.famousPlaces?.[0]?.name || null,
         bestSeason: d.bestSeason,
         latitude: d.latitude,
         longitude: d.longitude,

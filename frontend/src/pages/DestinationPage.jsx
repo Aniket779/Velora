@@ -70,9 +70,20 @@ export default function DestinationPage() {
           padding: 0, overflow: 'hidden', marginBottom: '1.5rem', position: 'relative',
         }}
       >
-        {dest.vrImageUrl && (
-          <img src={dest.vrImageUrl} alt="" style={{ width: '100%', height: 220, objectFit: 'cover', opacity: 0.55 }} />
-        )}
+        {/*
+          Tinted banner, not a photograph — same reasoning as the destination
+          tiles. This showed vrImageUrl, a stock image picked by tag, so
+          Delhi's page was headed by a photo of somewhere else entirely.
+          We have no real photo per city; implying we do is the lie.
+        */}
+        <div
+          className={`dest-tile__banner dest-tile__banner--${(dest.tags || [])[0] || 'generic'}`}
+          style={{ height: 220 }}
+        >
+          <span className="dest-tile__initial" style={{ fontSize: '5rem' }} aria-hidden="true">
+            {dest.cityName?.trim().charAt(0).toUpperCase()}
+          </span>
+        </div>
         <div style={{ padding: '1.5rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', flexWrap: 'wrap' }}>
             <div>

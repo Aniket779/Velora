@@ -170,23 +170,41 @@ export function Recommendations({ limit = 6 }) {
           <Link
             key={d.citySlug}
             to={`/destination/${d.citySlug}`}
-            className="glass-panel glass-panel-hover fade-in-up"
+            className="glass-panel glass-panel-hover fade-in-up dest-tile"
             style={{
               padding: 0, overflow: 'hidden', textDecoration: 'none',
               display: 'block', animationDelay: `${i * 45}ms`,
             }}
           >
-            <img
-              src={d.image}
-              alt=""
-              loading="lazy"
-              style={{ width: '100%', height: 108, objectFit: 'cover' }}
-            />
+            {/*
+              A tinted panel, not a photograph.
+              This used to be a stock image picked by tag, which illustrated
+              Delhi with the Taj Mahal — a building in Agra, 200km away. We
+              have no real photo of each city, so showing one that implies we
+              do is worse than showing none. The tint encodes the destination
+              type, and the text underneath is all curated fact.
+            */}
+            <div className={`dest-tile__banner dest-tile__banner--${(d.tags || [])[0] || 'generic'}`}>
+              <span className="dest-tile__initial" aria-hidden="true">
+                {d.cityName?.trim().charAt(0).toUpperCase()}
+              </span>
+            </div>
+
             <div style={{ padding: '0.85rem' }}>
               <div style={{ color: 'white', fontWeight: 600, fontSize: '0.95rem' }}>{d.cityName}</div>
               <div style={{ color: 'var(--text-muted)', fontSize: '0.76rem', marginBottom: '0.45rem' }}>
                 {[d.state, d.country].filter(Boolean).join(', ')}
               </div>
+
+              {/* A real landmark from the seed data, so the card says something
+                  true about the place instead of decorating it. */}
+              {d.topSight && (
+                <div className="dest-tile__sight" title={d.topSight}>
+                  <MapPin size={12} aria-hidden="true" />
+                  <span>{d.topSight}</span>
+                </div>
+              )}
+
               <div className="tag-row">
                 {(d.tags || []).slice(0, 2).map((t) => <span key={t} className="tag">{t}</span>)}
               </div>
@@ -232,12 +250,24 @@ export function RecentlyViewed() {
               flexShrink: 0, borderRadius: 'var(--radius-full)',
             }}
           >
-            <img
-              src={it.snapshot?.image}
-              alt=""
-              loading="lazy"
-              style={{ width: 30, height: 30, borderRadius: '50%', objectFit: 'cover' }}
-            />
+            {/* Destinations have no photo (see library.service buildSnapshot),
+                so they get a tag-tinted initial instead of a broken image. */}
+            {it.snapshot?.image ? (
+              <img
+                src={it.snapshot.image}
+                alt=""
+                loading="lazy"
+                style={{ width: 30, height: 30, borderRadius: '50%', objectFit: 'cover' }}
+              />
+            ) : (
+              <span
+                className={`dest-tile__banner dest-tile__banner--${(it.snapshot?.tags || [])[0] || 'generic'}`}
+                aria-hidden="true"
+                style={{ width: 30, height: 30, borderRadius: '50%', fontSize: '0.8rem', fontWeight: 700, color: 'rgba(255,255,255,0.85)' }}
+              >
+                {it.snapshot?.name?.trim().charAt(0).toUpperCase()}
+              </span>
+            )}
             <span style={{ color: 'white', fontSize: '0.85rem', fontWeight: 500, whiteSpace: 'nowrap' }}>
               {it.snapshot?.name}
             </span>

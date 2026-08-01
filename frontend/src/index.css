@@ -1425,3 +1425,77 @@ select.input-field option { background: var(--bg-secondary); color: white; }
   color: var(--text-secondary);
   font-size: 0.9rem;
 }
+
+/* ============================================================================
+   DESTINATION TILES
+   ============================================================================
+   These deliberately show NO photograph.
+
+   They used to render a stock Unsplash image chosen by tag, which meant Delhi
+   was illustrated with the Taj Mahal — a building 200km away in Agra — and
+   Bengaluru with a Manhattan skyline. We have no real photo of each of the 171
+   destinations, and an image that implies otherwise is a confident lie. The
+   same principle as rejecting AI-invented hotels: show what's true or show
+   nothing.
+
+   So the banner is a tinted gradient keyed to the destination type, with the
+   city initial as a watermark. It reads as intentional design rather than a
+   missing image, and every word beneath it is curated fact.
+   ========================================================================= */
+
+.dest-tile__banner {
+  position: relative;
+  height: 108px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+
+/* The initial is decoration, so it's aria-hidden and deliberately low
+   contrast — it must not compete with the city name below it. */
+.dest-tile__initial {
+  font-family: 'Outfit', sans-serif;
+  font-size: 3.1rem;
+  font-weight: 700;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.22);
+  letter-spacing: -0.04em;
+  user-select: none;
+}
+
+/* A subtle sheen so the panel doesn't read as flat colour. */
+.dest-tile__banner::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 30% 20%, rgba(255,255,255,0.16), transparent 60%);
+}
+
+/* Tag-keyed tints. Each one evokes the destination type without claiming to
+   depict any specific place. */
+.dest-tile__banner--metro      { background: linear-gradient(135deg, #4f46e5, #7c3aed); }
+.dest-tile__banner--beach      { background: linear-gradient(135deg, #0891b2, #14b8a6); }
+.dest-tile__banner--hill       { background: linear-gradient(135deg, #15803d, #4d7c0f); }
+.dest-tile__banner--desert     { background: linear-gradient(135deg, #b45309, #d97706); }
+.dest-tile__banner--pilgrimage { background: linear-gradient(135deg, #7e22ce, #a21caf); }
+.dest-tile__banner--wildlife   { background: linear-gradient(135deg, #166534, #3f6212); }
+.dest-tile__banner--unesco     { background: linear-gradient(135deg, #a16207, #ca8a04); }
+.dest-tile__banner--heritage   { background: linear-gradient(135deg, #9f1239, #b45309); }
+.dest-tile__banner--generic    { background: linear-gradient(135deg, #334155, #475569); }
+
+/* The real landmark line. Truncated rather than wrapped, so tiles stay the
+   same height regardless of how long a monument's name is. */
+.dest-tile__sight {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-bottom: 0.5rem;
+  color: var(--text-secondary);
+  font-size: 0.74rem;
+}
+.dest-tile__sight svg { flex-shrink: 0; color: var(--accent-teal); }
+.dest-tile__sight span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

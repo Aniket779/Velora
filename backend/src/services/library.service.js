@@ -43,7 +43,12 @@ const buildSnapshot = (refType, doc) => {
     return {
       name: doc.cityName,
       subtitle: [doc.state, doc.country].filter(Boolean).join(', '),
-      image: doc.vrImageUrl,
+      // Deliberately null. This carried vrImageUrl — a stock photo picked by
+      // tag, so a saved "Delhi" showed a picture of somewhere else. The UI
+      // renders a tag-tinted tile when image is absent. Hotels, restaurants
+      // and attractions below keep their images: those businesses are
+      // generated, so generic imagery represents them honestly.
+      image: null,
       citySlug: doc.citySlug,
       tags: doc.tags,
     };
