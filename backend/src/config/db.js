@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { printConnectionHelp } = require('./dbErrors');
 
 /**
  * ============================================================================
@@ -26,19 +27,7 @@ const connectDB = async () => {
   } catch (error) {
     console.error(`[DB] Connection failed: ${error.message}`);
 
-    // By far the most common deployment failure, and the driver's own message
-    // ("Could not connect to any servers...") doesn't say what to do about it.
-    if (/ENOTFOUND|querySrv|timed out|ServerSelection/i.test(error.message)) {
-      console.error(
-        '\n[DB] This is usually one of three things:\n' +
-          '  1. Atlas IP allowlist — Render uses dynamic IPs, so Network Access\n' +
-          '     must include 0.0.0.0/0. This is the cause ~80% of the time.\n' +
-          '  2. A special character in the password that needs URL-encoding\n' +
-          '     (@ becomes %40, # becomes %23, and so on).\n' +
-          '  3. MONGO_URI missing the database name before the "?" — it should\n' +
-          '     look like ...mongodb.net/Velora?retryWrites=true\n'
-      );
-    }
+    printConnectionHelp(error.message);
     process.exit(1);
   }
 

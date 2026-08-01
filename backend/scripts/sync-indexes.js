@@ -82,6 +82,7 @@ const run = async () => {
 run()
   .catch((err) => {
     console.error('\nIndex sync failed:', err.message);
+    require('../src/config/dbErrors').printConnectionHelp(err.message);
     process.exitCode = 1;
   })
   .finally(async () => {

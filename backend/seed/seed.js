@@ -240,6 +240,10 @@ run()
     if (err.writeErrors?.length) {
       console.error('First write error:', err.writeErrors[0].err?.errmsg);
     }
+    // Seeding is usually the first thing pointed at a new Atlas cluster, so
+    // it's where connection problems surface — and where the explanation is
+    // most useful.
+    require('../src/config/dbErrors').printConnectionHelp(err.message);
     process.exitCode = 1;
   })
   .finally(async () => {
