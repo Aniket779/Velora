@@ -1621,11 +1621,17 @@ select.input-field option { background: var(--bg-secondary); color: white; }
 
 /* --- progress dots -------------------------------------------------------- */
 
+/*
+   Right-aligned, NOT centred. Centred dots collide with .vr-panel — the panel
+   owns x ∈ [28px, 448px] along the bottom edge, which a viewport-centred
+   element runs into at around 1000px wide. Anchoring both the dots and the
+   caption to the right keeps the bottom edge cleanly divided: panel left,
+   slideshow controls right.
+*/
 .gallery__dots {
   position: absolute;
   bottom: 1.4rem;
-  left: 50%;
-  transform: translateX(-50%);
+  right: 5.5rem;
   z-index: 310;
   display: flex;
   gap: 0.4rem;
@@ -1669,12 +1675,21 @@ select.input-field option { background: var(--bg-secondary); color: white; }
 
 /* --- caption -------------------------------------------------------------- */
 
+/*
+   Positioned to clear .vr-panel, which owns the bottom-left corner
+   (bottom: 1.75rem, left: 1.75rem, max-width: 420px). The caption was at
+   left: 2rem and rendered underneath it — the landmark name, the one piece
+   of text the whole gallery exists to show, was unreadable.
+
+   The offset is derived from the panel's own numbers rather than eyeballed,
+   so moving the panel doesn't silently re-break this.
+*/
 .gallery__caption {
   position: absolute;
-  left: 2rem;
+  left: calc(1.75rem + 420px + 2rem);
+  right: 5.5rem;   /* clear of the next-slide arrow */
   bottom: 3.4rem;
   z-index: 310;
-  max-width: min(560px, 70vw);
   animation: fade-in-up var(--dur-slow) var(--ease-out);
 }
 
@@ -1717,12 +1732,37 @@ select.input-field option { background: var(--bg-secondary); color: white; }
 
 /* --- mobile --------------------------------------------------------------- */
 
-@media (max-width: 768px) {
-  .gallery__caption { left: 1.1rem; right: 1.1rem; bottom: 3.2rem; max-width: none; }
+/*
+   Below 1000px the side-by-side layout stops working: the panel still claims
+   448px of the bottom edge, which leaves the caption under ~130px — not
+   enough for "Chhatrapati Shivaji Terminus". So the caption and dots move to
+   the TOP, where nothing competes with them, and the panel keeps the bottom.
+
+   1000px, not 700px. 700px is where the panel becomes a bottom sheet, but the
+   caption is already unusable well before that.
+*/
+@media (max-width: 1000px) {
+  .gallery__caption {
+    left: 1.25rem;
+    right: 1.25rem;
+    bottom: auto;
+    top: 4.8rem;   /* below the close/pause buttons */
+  }
+  .gallery__caption h3 { font-size: clamp(1.3rem, 4.5vw, 1.9rem); }
+
+  .gallery__dots {
+    bottom: auto;
+    top: 1.5rem;
+    right: auto;
+    left: 1.25rem;
+  }
+}
+
+@media (max-width: 700px) {
   .gallery__nav { width: 40px; height: 40px; }
   .gallery__nav--prev { left: 0.5rem; }
   .gallery__nav--next { right: 0.5rem; }
-  /* The info panel becomes a bottom sheet on mobile and would sit on top of
-     the caption, so the caption yields. */
-  .gallery__caption { bottom: auto; top: 4.5rem; }
+  /* The nav arrows are vertically centred and would land on the bottom sheet
+     on a short screen; nudge them into the upper half. */
+  .gallery__nav { top: 38%; }
 }
