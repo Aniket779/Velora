@@ -210,15 +210,25 @@ export default function ItineraryDisplay({ itinerary, onBookItem }) {
                 {intelligence.oneLineSummary}
               </p>
             )}
-            {intelligence.vrImageUrl && (
-              <button
-                className="btn-primary"
-                onClick={() => setShowVR(true)}
-                style={{ background: 'linear-gradient(135deg, #14b8a6, #2563eb)', boxShadow: '0 4px 15px rgba(20, 184, 166, 0.4)', padding: '0.8rem 2rem', fontSize: '1rem' }}
-              >
-                <Eye size={18} /> Experience {intelligence.cityName || destination} in 360° VR
-              </button>
-            )}
+            {/*
+              Gated on there being REAL landmark photos, not on vrImageUrl.
+              vrImageUrl was a stock image, so this button used to appear for
+              every city and open a viewer showing a photo of somewhere else.
+              Now: no photos, no button.
+            */}
+            {(() => {
+              const shots = (intelligence.seededFamousPlaces || []).filter((p) => p?.imageUrl);
+              if (!shots.length) return null;
+              return (
+                <button
+                  className="btn-primary"
+                  onClick={() => setShowVR(true)}
+                  style={{ background: 'linear-gradient(135deg, #14b8a6, #2563eb)', boxShadow: '0 4px 15px rgba(20, 184, 166, 0.4)', padding: '0.8rem 2rem', fontSize: '1rem' }}
+                >
+                  <Eye size={18} /> Explore {shots.length} landmarks in {intelligence.cityName || destination}
+                </button>
+              );
+            })()}
           </div>
 
           <DestinationIntelligence

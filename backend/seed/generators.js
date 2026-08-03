@@ -341,7 +341,10 @@ const generateDestinationDoc = (d) => ({
   traditionsAndCulture: d.culture || d.desc,
   famousPlaces: d.sights.map(([name, category]) => ({
     name,
+    category,
     description: `${category} attraction in ${d.city}.`,
+    // imageUrl is filled in separately by `npm run fetch-images`, which looks
+    // each landmark up on Wikipedia. Never generated — see the model comment.
   })),
   localTransport: d.transport || [],
   /**

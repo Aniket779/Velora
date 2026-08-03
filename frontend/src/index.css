@@ -1499,3 +1499,230 @@ select.input-field option { background: var(--bg-secondary); color: white; }
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* ============================================================================
+   LANDMARK GALLERY
+   ============================================================================
+   Replaced a Pannellum 360° viewer that was being fed ordinary flat photos —
+   an equirectangular projection stretched a normal image across a sphere, so
+   you got a blurry fragment of one monument and no way to reach the rest.
+   A slideshow was what the feature always wanted.
+   ========================================================================= */
+
+.gallery {
+  position: relative;
+  width: 100%;
+  height: 100dvh;
+  background: #000;
+  overflow: hidden;
+}
+
+/* --- slides --------------------------------------------------------------- */
+
+/* Every slide stays mounted and cross-fades. Swapping one <img> src would
+   flash white on each transition while the next image downloads. */
+.gallery__slide {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 900ms var(--ease-out);
+  will-change: opacity, transform;
+}
+
+.gallery__slide--active {
+  opacity: 1;
+  /* Slow Ken Burns drift. Stops the still image feeling like a dead screen
+     for five seconds. */
+  animation: gallery-pan 12s ease-out forwards;
+}
+
+@keyframes gallery-pan {
+  from { transform: scale(1.02); }
+  to   { transform: scale(1.11); }
+}
+
+/* Vestibular safety: the pan is exactly the kind of slow drift that triggers
+   motion sickness, so it goes entirely rather than merely shortening. */
+@media (prefers-reduced-motion: reduce) {
+  .gallery__slide--active { animation: none !important; transform: none !important; }
+  .gallery__slide { transition: none !important; }
+}
+
+/* Keeps the caption and controls legible over a bright photo. */
+.gallery__scrim {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(to top, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.25) 34%, transparent 60%),
+    linear-gradient(to right, rgba(0,0,0,0.55) 0%, transparent 45%);
+}
+
+/* --- empty state ---------------------------------------------------------- */
+
+.gallery__empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  text-align: center;
+  padding: 2rem;
+  color: rgba(255,255,255,0.9);
+}
+.gallery__empty p { font-size: 1.05rem; font-weight: 600; }
+.gallery__empty span {
+  font-size: 0.83rem;
+  color: rgba(255,255,255,0.72);
+  max-width: 380px;
+  line-height: 1.5;
+}
+
+/* --- controls ------------------------------------------------------------- */
+
+.gallery__close,
+.gallery__nav,
+.gallery__pause {
+  position: absolute;
+  z-index: 310;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  color: #fff;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: background var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
+}
+.gallery__close:hover,
+.gallery__nav:hover,
+.gallery__pause:hover { background: rgba(0, 0, 0, 0.8); transform: scale(1.06); }
+
+.gallery__close { top: 1.25rem; right: 1.25rem; width: 46px; height: 46px; }
+
+.gallery__nav {
+  top: 50%;
+  transform: translateY(-50%);
+  width: 48px;
+  height: 48px;
+}
+.gallery__nav:hover { transform: translateY(-50%) scale(1.06); }
+.gallery__nav--prev { left: 1.25rem; }
+.gallery__nav--next { right: 1.25rem; }
+
+.gallery__pause { top: 1.25rem; right: 5rem; width: 36px; height: 36px; }
+
+/* --- progress dots -------------------------------------------------------- */
+
+.gallery__dots {
+  position: absolute;
+  bottom: 1.4rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 310;
+  display: flex;
+  gap: 0.4rem;
+  padding: 0.45rem 0.7rem;
+  background: rgba(0,0,0,0.45);
+  border-radius: var(--radius-full);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.gallery__dot {
+  position: relative;
+  width: 26px;
+  height: 4px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-full);
+  background: rgba(255,255,255,0.32);
+  cursor: pointer;
+  overflow: hidden;
+  transition: background var(--dur-fast) var(--ease-out);
+}
+.gallery__dot:hover { background: rgba(255,255,255,0.55); }
+.gallery__dot--active { background: rgba(255,255,255,0.35); }
+
+/* Fills across exactly the slide duration, so the dots double as a timer. */
+.gallery__dot-fill {
+  position: absolute;
+  inset: 0;
+  transform-origin: left;
+  background: #fff;
+  animation: gallery-progress 5s linear forwards;
+}
+@keyframes gallery-progress {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gallery__dot-fill { animation: none; transform: scaleX(1); }
+}
+
+/* --- caption -------------------------------------------------------------- */
+
+.gallery__caption {
+  position: absolute;
+  left: 2rem;
+  bottom: 3.4rem;
+  z-index: 310;
+  max-width: min(560px, 70vw);
+  animation: fade-in-up var(--dur-slow) var(--ease-out);
+}
+
+.gallery__counter {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: rgba(255,255,255,0.66);
+  margin-bottom: 0.3rem;
+}
+
+.gallery__caption h3 {
+  font-size: clamp(1.5rem, 4vw, 2.4rem);
+  color: #fff;
+  line-height: 1.1;
+  text-shadow: 0 2px 18px rgba(0,0,0,0.6);
+}
+
+.gallery__category {
+  display: inline-block;
+  margin-top: 0.5rem;
+  padding: 0.2rem 0.6rem;
+  background: rgba(99, 102, 241, 0.35);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: var(--radius-full);
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #e0e7ff;
+}
+
+.gallery__credit {
+  display: block;
+  margin-top: 0.55rem;
+  font-size: 0.68rem;
+  color: rgba(255,255,255,0.5);
+  text-decoration: none;
+}
+.gallery__credit:hover { color: rgba(255,255,255,0.85); text-decoration: underline; }
+
+/* --- mobile --------------------------------------------------------------- */
+
+@media (max-width: 768px) {
+  .gallery__caption { left: 1.1rem; right: 1.1rem; bottom: 3.2rem; max-width: none; }
+  .gallery__nav { width: 40px; height: 40px; }
+  .gallery__nav--prev { left: 0.5rem; }
+  .gallery__nav--next { right: 0.5rem; }
+  /* The info panel becomes a bottom sheet on mobile and would sit on top of
+     the caption, so the caption yields. */
+  .gallery__caption { bottom: auto; top: 4.5rem; }
+}

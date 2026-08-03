@@ -1,148 +1,199 @@
-import React, { useId, useEffect, useRef, useState } from 'react';
-import { X, MapPin, Utensils, Info, Loader2, AlertCircle } from 'lucide-react';
+import React, { useId, useEffect, useState, useCallback, useMemo, useRef } from 'react';
+import { X, MapPin, Utensils, Info, ChevronLeft, ChevronRight, Pause, Play, ImageOff } from 'lucide-react';
 import { useModalA11y } from '../hooks/useModalA11y';
-import { loadScript, loadStylesheet } from '../utils/loadExternal';
 
 /**
- * 360° destination viewer.
+ * ============================================================================
+ * LANDMARK GALLERY
+ * ============================================================================
+ * Was a Pannellum 360° viewer. It looked terrible, for a reason that had
+ * nothing to do with Pannellum: we were feeding it an ordinary flat photo.
+ * An equirectangular viewer expects a 2:1 sphere projection, so a normal image
+ * gets stretched across a globe — you'd see a blurry fragment of one monument
+ * and nothing else, with no way to reach the rest of the city.
  *
- * Two things worth knowing about this file:
+ * What the feature actually wanted was a tour: Qutub Minar, then Lotus Temple,
+ * then Jantar Mantar. That's a slideshow, not a sphere. Dropping the 360
+ * projection fixes the resolution problem AND makes the multi-landmark
+ * experience possible, while removing an unmaintained React-16-era dependency
+ * and a runtime CDN load.
  *
- * 1. ACCESSIBILITY. This was the worst case in the app: a full-viewport
- *    overlay with no dialog role, no focus trap and no Escape handler, so a
- *    keyboard user who opened it had no way out. It also put a 450px info
- *    panel over the viewer, which on a phone covered the whole experience —
- *    the panel is a bottom sheet on small screens now.
- *
- * 2. NO REACT WRAPPER. This used `pannellum-react`, which declares
- *    `peer react@16.x` and so refuses to install on React 19 — it broke the
- *    production build. That package was last published before React 17
- *    existed and pulled in video.js, 21MB of node_modules for one modal.
- *
- *    Pannellum itself is a plain UMD library. Driving it directly is about
- *    fifteen lines: create a div, hand it to `pannellum.viewer()`, call
- *    `.destroy()` on unmount. The wrapper was never earning its keep.
+ * The photos are real, sourced per landmark from Wikipedia by
+ * `npm run fetch-images`. Landmarks we couldn't find a photo for are skipped
+ * rather than padded with stock imagery — the same rule the itinerary
+ * grounding follows.
+ * ============================================================================
  */
 
-const PANNELLUM_VERSION = '2.5.6';
-const PANNELLUM_JS = `https://cdn.jsdelivr.net/npm/pannellum@${PANNELLUM_VERSION}/build/pannellum.js`;
-const PANNELLUM_CSS = `https://cdn.jsdelivr.net/npm/pannellum@${PANNELLUM_VERSION}/build/pannellum.css`;
-
-const FALLBACK_PANORAMA = 'https://pannellum.org/images/alma.jpg';
+const SLIDE_MS = 5000;
 
 export default function VRDestinationModal({ destination, onClose }) {
   const titleId = useId();
   const dialogRef = useModalA11y(onClose);
 
-  const containerRef = useRef(null);
-  const viewerRef = useRef(null);
-  const [status, setStatus] = useState('loading'); // loading | ready | error
+  /**
+   * Only landmarks with a real photo. A destination whose landmarks all
+   * missed the Wikipedia lookup produces an empty list, and we show the
+   * tinted fallback instead of broken image icons.
+   */
+  const slides = useMemo(() => {
+    const seeded = destination?.seededFamousPlaces || destination?.famousPlaces || [];
+    return seeded.filter((p) => p?.imageUrl);
+  }, [destination]);
 
-  const panorama = destination?.vrImageUrl || FALLBACK_PANORAMA;
+  const [index, setIndex] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const [failed, setFailed] = useState(() => new Set());
 
+  const visible = useMemo(
+    () => slides.filter((_, i) => !failed.has(i)),
+    [slides, failed]
+  );
+  const count = visible.length;
+
+  const go = useCallback((delta) => {
+    setIndex((i) => (count ? (i + delta + count) % count : 0));
+  }, [count]);
+
+  // Auto-advance. Resets whenever the index changes, so manually stepping
+  // forward gives you a fresh 5 seconds rather than a stub of the old timer.
   useEffect(() => {
-    // React 18+ StrictMode runs effects twice in development. Without this,
-    // the second pass initialises a viewer over the first one's canvas.
-    let cancelled = false;
+    if (paused || count < 2) return undefined;
+    const t = setTimeout(() => go(1), SLIDE_MS);
+    return () => clearTimeout(t);
+  }, [index, paused, count, go]);
 
-    setStatus('loading');
-
-    Promise.all([loadStylesheet(PANNELLUM_CSS), loadScript(PANNELLUM_JS)])
-      .then(() => {
-        if (cancelled || !containerRef.current) return;
-        if (!window.pannellum) throw new Error('pannellum global missing after load');
-
-        // Same configuration the old <Pannellum> props produced.
-        viewerRef.current = window.pannellum.viewer(containerRef.current, {
-          type: 'equirectangular',
-          panorama,
-          pitch: 10,
-          yaw: 180,
-          hfov: 110,
-          autoLoad: true,
-          autoRotate: -2,
-          showZoomCtrl: false,
-          showFullscreenCtrl: false,
-          // Pannellum draws its own "loading" spinner; ours is nicer and
-          // already matches the app.
-          hotSpotDebug: false,
-        });
-
-        setStatus('ready');
-      })
-      .catch((err) => {
-        if (!cancelled) {
-          console.error('[VR] Pannellum failed to load:', err.message);
-          setStatus('error');
-        }
-      });
-
-    return () => {
-      cancelled = true;
-      // WebGL contexts are a limited browser resource — a few leaked viewers
-      // and every canvas on the page stops rendering. destroy() releases it.
-      if (viewerRef.current) {
-        try {
-          viewerRef.current.destroy();
-        } catch {
-          // Already torn down; nothing to do.
-        }
-        viewerRef.current = null;
-      }
+  // Arrow keys. Escape is already handled by useModalA11y.
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === 'ArrowRight') { e.preventDefault(); go(1); }
+      if (e.key === 'ArrowLeft') { e.preventDefault(); go(-1); }
+      if (e.key === ' ') { e.preventDefault(); setPaused((p) => !p); }
     };
-  }, [panorama]);
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [go]);
+
+  // An index past the end after a failed image would render nothing at all.
+  useEffect(() => {
+    if (index >= count && count > 0) setIndex(0);
+  }, [index, count]);
 
   if (!destination) return null;
 
   const city = destination.cityName || destination.city || 'Destination';
+  const current = visible[index];
+  const tag = (destination.tags || [])[0] || 'generic';
 
   return (
     <div className="modal-backdrop" style={{ zIndex: 300, padding: 0 }}>
       <div
         ref={dialogRef}
+        className="gallery"
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        style={{ position: 'relative', width: '100%', height: '100dvh', background: '#000' }}
+        onMouseEnter={() => setPaused(true)}
+        onMouseLeave={() => setPaused(false)}
       >
-        <button
-          onClick={onClose}
-          aria-label={`Close 360 degree view of ${city}`}
-          style={{
-            position: 'absolute', top: '1.25rem', right: '1.25rem', zIndex: 310,
-            background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.22)',
-            color: 'white', width: 46, height: 46, borderRadius: '50%', cursor: 'pointer',
-            backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}
-        >
+        <button type="button" className="gallery__close" onClick={onClose} aria-label={`Close ${city} gallery`}>
           <X size={22} aria-hidden="true" />
         </button>
 
-        {/* Pannellum takes over this element entirely. */}
-        <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
-
-        {status === 'loading' && (
-          <div style={overlayStyle} role="status">
-            <Loader2 size={30} className="spin" aria-hidden="true" />
-            <p style={{ marginTop: '0.8rem', fontSize: '0.9rem' }}>Loading 360° view…</p>
+        {/* ---------------------------------------------------------- stage */}
+        {count > 0 ? (
+          <>
+            {/*
+              All slides stay mounted and cross-fade via opacity. Swapping the
+              src instead would show a white flash on every transition while
+              the next image downloads.
+            */}
+            {visible.map((place, i) => (
+              <img
+                key={place.imageUrl}
+                src={place.imageUrl}
+                alt={i === index ? `${place.name}, ${city}` : ''}
+                aria-hidden={i !== index}
+                className={`gallery__slide${i === index ? ' gallery__slide--active' : ''}`}
+                // The neighbours are prefetched; the rest wait.
+                loading={Math.abs(i - index) <= 1 ? 'eager' : 'lazy'}
+                onError={() => setFailed((f) => new Set(f).add(i))}
+              />
+            ))}
+            <div className="gallery__scrim" />
+          </>
+        ) : (
+          <div className={`gallery__empty dest-tile__banner dest-tile__banner--${tag}`}>
+            <ImageOff size={34} aria-hidden="true" />
+            <p>No photographs available for {city} yet</p>
+            <span>
+              Landmark photos come from Wikipedia. Rather than fill the gap with
+              stock images of somewhere else, we show nothing.
+            </span>
           </div>
         )}
 
-        {status === 'error' && (
-          <div style={overlayStyle} role="alert">
-            <AlertCircle size={30} color="var(--danger)" aria-hidden="true" />
-            <p style={{ marginTop: '0.8rem', fontSize: '0.95rem', fontWeight: 600 }}>
-              The 360° viewer couldn&apos;t load
-            </p>
-            <p style={{ marginTop: '0.3rem', fontSize: '0.82rem', color: '#94a3b8', maxWidth: 300, textAlign: 'center' }}>
-              The panorama library is served from a CDN that isn&apos;t reachable right now.
-              Everything else on this page still works.
-            </p>
+        {/* ------------------------------------------------------- controls */}
+        {count > 1 && (
+          <>
+            <button type="button" className="gallery__nav gallery__nav--prev" onClick={() => go(-1)} aria-label="Previous landmark">
+              <ChevronLeft size={26} aria-hidden="true" />
+            </button>
+            <button type="button" className="gallery__nav gallery__nav--next" onClick={() => go(1)} aria-label="Next landmark">
+              <ChevronRight size={26} aria-hidden="true" />
+            </button>
+
+            <div className="gallery__dots" role="tablist" aria-label="Landmarks">
+              {visible.map((place, i) => (
+                <button
+                  key={place.imageUrl}
+                  type="button"
+                  role="tab"
+                  aria-selected={i === index}
+                  aria-label={place.name}
+                  className={`gallery__dot${i === index ? ' gallery__dot--active' : ''}`}
+                  onClick={() => setIndex(i)}
+                >
+                  {/* Fills over 5s so you can see when the next slide is due. */}
+                  {i === index && !paused && <span className="gallery__dot-fill" />}
+                </button>
+              ))}
+            </div>
+
+            <button
+              type="button"
+              className="gallery__pause"
+              onClick={() => setPaused((p) => !p)}
+              aria-label={paused ? 'Resume slideshow' : 'Pause slideshow'}
+            >
+              {paused ? <Play size={15} aria-hidden="true" /> : <Pause size={15} aria-hidden="true" />}
+            </button>
+          </>
+        )}
+
+        {/* --------------------------------------------------------- caption */}
+        {current && (
+          <div className="gallery__caption" key={current.name}>
+            <span className="gallery__counter">{index + 1} / {count}</span>
+            <h3>{current.name}</h3>
+            {current.category && <span className="gallery__category">{current.category}</span>}
+            {/* CC licensing requires credit. */}
+            {current.attribution && (
+              <a
+                className="gallery__credit"
+                href={current.wikipediaUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {current.attribution}
+              </a>
+            )}
           </div>
         )}
 
-        {/* Overlay panel on desktop; bottom sheet on mobile. */}
+        {/* ----------------------------------------------- destination panel */}
         <div className="vr-panel">
           <h2 id={titleId} style={{ fontSize: '1.7rem', marginBottom: '0.4rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <MapPin size={21} color="var(--accent-primary)" aria-hidden="true" /> {city}
@@ -188,18 +239,3 @@ export default function VRDestinationModal({ destination, onClose }) {
     </div>
   );
 }
-
-const overlayStyle = {
-  position: 'absolute',
-  inset: 0,
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  justifyContent: 'center',
-  background: '#000',
-  color: '#e2e8f0',
-  // Must not swallow clicks on the close button above it.
-  pointerEvents: 'none',
-  zIndex: 305,
-  padding: '1.5rem',
-};

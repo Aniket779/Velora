@@ -35,7 +35,25 @@ const destinationSchema = new mongoose.Schema(
 
     famousFoods: [{ type: String }],
     traditionsAndCulture: { type: String },
-    famousPlaces: [{ name: String, description: String }],
+    /**
+     * Real landmarks, curated per city in the seed data.
+     *
+     * imageUrl is populated separately by `npm run fetch-images`, which looks
+     * each landmark up on Wikipedia. It is deliberately NOT generated: these
+     * are real named places, and a stock photo standing in for one is the
+     * failure that had Delhi illustrated with the Taj Mahal.
+     *
+     * Absent imageUrl means "we have no photo of this", and the UI skips it.
+     */
+    famousPlaces: [{
+      name: String,
+      description: String,
+      category: String,
+      imageUrl: String,
+      wikipediaUrl: String,
+      /** Wikipedia images are CC-licensed; attribution is a condition of use. */
+      attribution: String,
+    }],
     localTransport: [{ type: String }],
 
     /** Card thumbnail (16:9-ish). Distinct from the 360° panorama below. */

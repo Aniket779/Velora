@@ -188,6 +188,37 @@ const run = async () => {
   await mongoose.connect(uri, { serverSelectionTimeoutMS: 10000 });
   console.log('  connected\n');
 
+  /**
+   * Landmark photos survive a reseed.
+   *
+   * `npm run fetch-images` looks up a real Wikipedia photo for every landmark
+   * — 171 cities, a few minutes of API calls. Those URLs live on the
+   * Destination documents this script is about to delete, so without this a
+   * routine reseed silently throws all of it away and the galleries go blank
+   * until someone remembers to re-run the fetch.
+   *
+   * Keyed on citySlug + landmark name, which is stable across reseeds because
+   * both come from the curated source data.
+   */
+  const preservedImages = new Map();
+  if (!KEEP) {
+    const existing = await Destination.find().select('citySlug famousPlaces').lean();
+    for (const dest of existing) {
+      for (const place of dest.famousPlaces || []) {
+        if (place.imageUrl) {
+          preservedImages.set(`${dest.citySlug}::${place.name}`, {
+            imageUrl: place.imageUrl,
+            wikipediaUrl: place.wikipediaUrl,
+            attribution: place.attribution,
+          });
+        }
+      }
+    }
+    if (preservedImages.size) {
+      console.log(`Preserving ${fmt(preservedImages.size)} landmark photos across the reseed\n`);
+    }
+  }
+
   // Inventory only. User accounts, trips and generated itineraries are left
   // alone so re-seeding never destroys real work.
   if (!KEEP) {
@@ -197,6 +228,16 @@ const run = async () => {
       Flight.deleteMany({}), Destination.deleteMany({}),
     ]);
     console.log(`  removed ${fmt(cleared.reduce((s, r) => s + r.deletedCount, 0))} old documents\n`);
+  }
+
+  // Re-attach the photos to the freshly generated documents.
+  if (preservedImages.size) {
+    for (const dest of destinationDocs) {
+      for (const place of dest.famousPlaces || []) {
+        const saved = preservedImages.get(`${dest.citySlug}::${place.name}`);
+        if (saved) Object.assign(place, saved);
+      }
+    }
   }
 
   console.log('Inserting...');
